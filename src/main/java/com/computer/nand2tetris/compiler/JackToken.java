@@ -5,7 +5,6 @@ import com.google.auto.value.AutoValue;
 @AutoValue
 abstract class JackToken {
 
-
   enum TokenType {
     SYMBOL, INTEGER_CONSTANT, STRING_CONSTANT, KEYWORD, IDENTIFIER,
   }

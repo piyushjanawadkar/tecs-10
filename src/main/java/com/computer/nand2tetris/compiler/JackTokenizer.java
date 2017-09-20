@@ -3,7 +3,6 @@ package com.computer.nand2tetris.compiler;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 
-import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -20,6 +19,14 @@ class JackTokenizer {
           new IntegerConstantTokenExtractor(),
           new StringConstantTokenExtractor(),
           new IdentifierOrKeywordTokenExtractor());
+
+  ImmutableList<JackToken> tokenize(BufferedReader reader) {
+    JackPreprocessor preprocessor = new JackPreprocessor();
+    return reader.lines()
+        .map(preprocessor::preprocess)
+        .flatMap(l -> tokenizeLine(l))
+        .collect(toImmutableList());
+  }
 
   private static Stream<JackToken> tokenizeLine(String line) {
     LookAheadStream lookAheadStream = new LookAheadStream(line);
@@ -48,14 +55,5 @@ class JackTokenizer {
       ImmutableSet<JackTokenExtractor> tokenExtractors) {
     return tokenExtractors.stream().map(x -> x.getClass().getSimpleName())
         .collect(Collectors.joining(", "));
-  }
-
-  ImmutableList<JackToken> tokenize(BufferedReader reader) {
-    JackPreprocessor preprocessor = new JackPreprocessor();
-    return reader.lines().map(preprocessor::preprocess)
-        .filter(Optional::isPresent)
-        .map(Optional::get)
-        .flatMap(l -> tokenizeLine(l))
-        .collect(toImmutableList());
   }
 }

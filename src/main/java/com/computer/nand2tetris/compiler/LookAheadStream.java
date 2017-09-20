@@ -18,10 +18,8 @@ final class LookAheadStream {
   }
 
   public Optional<Character> extract() {
-    //System.err.println("before: " + lookAheadIndex);
     Optional<Character> extractedLookAhead = peek();
     lookAheadIndex++;
-    //System.err.println("after: " + lookAheadIndex);
     return extractedLookAhead;
   }
 
