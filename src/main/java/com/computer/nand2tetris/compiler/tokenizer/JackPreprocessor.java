@@ -1,4 +1,4 @@
-package com.computer.nand2tetris.compiler;
+package com.computer.nand2tetris.compiler.tokenizer;
 
 import com.google.common.base.Optional;
 
@@ -9,13 +9,13 @@ class JackPreprocessor {
   private static final String MULTI_LINE_COMMENT_END_DELIM = "*/";
   private boolean inComment = false;
 
-  public String preprocess(String line) {
+  String preprocess(String line) {
     StringBuilder builder = new StringBuilder();
     stripComment(line, 0, builder);
     return builder.toString();
   }
 
-  public void stripComment(String line, int index, StringBuilder builder) {
+  private void stripComment(String line, int index, StringBuilder builder) {
     // initialize state as if we are in the middle of a multiline comment that was begun in a
     // previous line.
     Optional<Integer> commentBeginIndex = Optional.of(index);

@@ -7,6 +7,7 @@ import java.io.IOException;
 public class JackParser {
 
   public void parse(ImmutableList<JackToken> tokens, BufferedWriter writer) {
+
     tokens.stream().forEachOrdered(t -> write(t.toString(), writer));
   }
 

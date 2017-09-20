@@ -1,6 +1,8 @@
-package com.computer.nand2tetris.compiler;
+package com.computer.nand2tetris.compiler.tokenizer;
 
-public class IntegerConstantTokenExtractor implements JackTokenExtractor {
+import com.computer.nand2tetris.compiler.JackToken;
+
+class IntegerConstantTokenExtractor implements JackTokenExtractor {
 
   private static int extractDigit(LookAheadStream lookAheadStream) {
     return Character.digit(lookAheadStream.extract().get(), 10);

@@ -1,8 +1,9 @@
-package com.computer.nand2tetris.compiler;
+package com.computer.nand2tetris.compiler.tokenizer;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 
+import com.computer.nand2tetris.compiler.JackToken;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -11,7 +12,7 @@ import java.io.BufferedReader;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-class JackTokenizer {
+public class JackTokenizer {
 
   private static final ImmutableSet<JackTokenExtractor> TOKEN_EXTRACTORS =
       ImmutableSet.of(
@@ -20,7 +21,7 @@ class JackTokenizer {
           new StringConstantTokenExtractor(),
           new IdentifierOrKeywordTokenExtractor());
 
-  ImmutableList<JackToken> tokenize(BufferedReader reader) {
+  public ImmutableList<JackToken> tokenize(BufferedReader reader) {
     JackPreprocessor preprocessor = new JackPreprocessor();
     return reader.lines()
         .map(preprocessor::preprocess)

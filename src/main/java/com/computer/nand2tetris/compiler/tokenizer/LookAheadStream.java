@@ -1,4 +1,4 @@
-package com.computer.nand2tetris.compiler;
+package com.computer.nand2tetris.compiler.tokenizer;
 
 import com.google.common.base.Optional;
 
@@ -13,11 +13,11 @@ final class LookAheadStream {
     skipWhitespace();
   }
 
-  public Optional<Character> peek() {
+  Optional<Character> peek() {
     return hasLookAhead() ? Optional.of(getLookAhead()) : Optional.absent();
   }
 
-  public Optional<Character> extract() {
+  Optional<Character> extract() {
     Optional<Character> extractedLookAhead = peek();
     lookAheadIndex++;
     return extractedLookAhead;

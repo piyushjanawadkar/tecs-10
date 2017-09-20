@@ -1,4 +1,6 @@
-package com.computer.nand2tetris.compiler;
+package com.computer.nand2tetris.compiler.tokenizer;
+
+import com.computer.nand2tetris.compiler.JackToken;
 
 interface JackTokenExtractor {
 

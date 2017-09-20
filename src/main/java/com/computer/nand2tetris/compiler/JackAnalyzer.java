@@ -1,5 +1,6 @@
 package com.computer.nand2tetris.compiler;
 
+import com.computer.nand2tetris.compiler.tokenizer.JackTokenizer;
 import com.google.common.collect.ImmutableList;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;

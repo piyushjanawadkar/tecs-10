@@ -1,8 +1,10 @@
-package com.computer.nand2tetris.compiler;
+package com.computer.nand2tetris.compiler.tokenizer;
 
+import com.computer.nand2tetris.compiler.JackToken;
+import com.computer.nand2tetris.compiler.tokenizer.JackTokenExtractor;
 import com.google.common.collect.ImmutableSet;
 
-public class SymbolTokenExtractor implements JackTokenExtractor {
+class SymbolTokenExtractor implements JackTokenExtractor {
 
   ImmutableSet<Character> VALID_SYMBOLS = ImmutableSet.of(
       '{', '}', '(', ')', '[', ']', '.',

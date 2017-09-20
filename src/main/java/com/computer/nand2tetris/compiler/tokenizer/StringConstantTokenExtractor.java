@@ -1,8 +1,9 @@
-package com.computer.nand2tetris.compiler;
+package com.computer.nand2tetris.compiler.tokenizer;
 
+import com.computer.nand2tetris.compiler.JackToken;
 import com.google.common.base.Preconditions;
 
-public class StringConstantTokenExtractor implements JackTokenExtractor {
+class StringConstantTokenExtractor implements JackTokenExtractor {
 
   @Override
   public JackToken extractToken(LookAheadStream lookAheadStream) {

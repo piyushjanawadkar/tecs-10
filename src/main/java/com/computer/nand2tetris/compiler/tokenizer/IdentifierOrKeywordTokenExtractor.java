@@ -1,9 +1,10 @@
-package com.computer.nand2tetris.compiler;
+package com.computer.nand2tetris.compiler.tokenizer;
 
+import com.computer.nand2tetris.compiler.JackToken;
 import com.computer.nand2tetris.compiler.JackToken.TokenType;
 import com.google.common.collect.ImmutableSet;
 
-public class IdentifierOrKeywordTokenExtractor implements JackTokenExtractor {
+class IdentifierOrKeywordTokenExtractor implements JackTokenExtractor {
 
   private static final ImmutableSet<String> KEYWORDS = ImmutableSet.of(
       "class", "constructor", "function",
@@ -34,7 +35,7 @@ public class IdentifierOrKeywordTokenExtractor implements JackTokenExtractor {
     }
 
     String tokenText = builder.toString();
-    JackToken.TokenType tokenType = isKeyword(tokenText) ? TokenType.KEYWORD : TokenType.IDENTIFIER;
+    TokenType tokenType = isKeyword(tokenText) ? TokenType.KEYWORD : TokenType.IDENTIFIER;
     return JackToken.create(tokenType, tokenText);
   }
 
