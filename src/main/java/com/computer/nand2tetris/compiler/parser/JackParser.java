@@ -1,5 +1,6 @@
-package com.computer.nand2tetris.compiler;
+package com.computer.nand2tetris.compiler.parser;
 
+import com.computer.nand2tetris.compiler.JackToken;
 import com.google.common.collect.ImmutableList;
 import java.io.BufferedWriter;
 import java.io.IOException;
