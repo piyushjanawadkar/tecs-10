@@ -6,7 +6,7 @@ import java.util.stream.Collectors;
 public final class ErrorMessageGenerator {
   private ErrorMessageGenerator() {}
 
-  public static <T> String generateClassNameCsv(Iterable<T> instances) {
+  public static <T> String generateClassNamesCsv(Iterable<T> instances) {
     return Streams.stream(instances).map(x -> x.getClass().getSimpleName())
         .collect(Collectors.joining(", "));
   }

@@ -53,7 +53,7 @@ public class JackTokenizer {
     Preconditions.checkArgument(tokenExtractorsMatchingLookAhead.size() == 1,
         "Exactly one token extractor expected for lookahead *%s*. Found [%s]",
         lookAhead,
-        ErrorMessageGenerator.generateClassNameCsv(tokenExtractorsMatchingLookAhead));
+        ErrorMessageGenerator.generateClassNamesCsv(tokenExtractorsMatchingLookAhead));
     return Iterables.getOnlyElement(tokenExtractorsMatchingLookAhead);
   }
 }

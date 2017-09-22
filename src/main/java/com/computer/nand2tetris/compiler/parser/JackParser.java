@@ -31,7 +31,7 @@ public class JackParser {
         .filter(p -> p.matches(token)).collect(toImmutableSet());
     Preconditions.checkArgument(parsers.size() == 1,
         "Exactly 1 token sequence parser expected for token: %s. Found [%s]", token.toString(),
-        ErrorMessageGenerator.generateClassNameCsv(parsers));
+        ErrorMessageGenerator.generateClassNamesCsv(parsers));
     return Iterables.getOnlyElement(parsers);
   }
 }
