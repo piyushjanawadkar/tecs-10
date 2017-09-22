@@ -10,7 +10,6 @@ final class LookAheadStream {
   LookAheadStream(String line) {
     this.line = line;
     lookAheadIndex = 0;
-    skipWhitespace();
   }
 
   Optional<Character> peek() {
@@ -21,12 +20,6 @@ final class LookAheadStream {
     Optional<Character> extractedLookAhead = peek();
     lookAheadIndex++;
     return extractedLookAhead;
-  }
-
-  void skipWhitespace() {
-    while (hasLookAhead() && Character.isWhitespace(getLookAhead())) {
-      lookAheadIndex++;
-    }
   }
 
   private boolean hasLookAhead() {

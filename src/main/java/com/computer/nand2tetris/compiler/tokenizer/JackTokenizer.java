@@ -4,6 +4,7 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 
 import com.computer.nand2tetris.compiler.JackToken;
+import com.computer.nand2tetris.compiler.JackToken.TokenType;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -16,6 +17,7 @@ public class JackTokenizer {
 
   private static final ImmutableSet<JackTokenExtractor> TOKEN_EXTRACTORS =
       ImmutableSet.of(
+          new WhitespaceTokenExtractor(),
           new SymbolTokenExtractor(),
           new IntegerConstantTokenExtractor(),
           new StringConstantTokenExtractor(),
@@ -36,8 +38,9 @@ public class JackTokenizer {
       JackTokenExtractor tokenExtractor = getOnlyTokenExtractorForLookAhead(
           lookAheadStream.peek().get());
       JackToken token = tokenExtractor.extractToken(lookAheadStream);
-      lookAheadStream.skipWhitespace();
-      builder.add(token);
+      if (!token.tokenType().equals(TokenType.WHITESPACE)) {
+        builder.add(token);
+      }
     }
     return builder.build().stream();
   }
