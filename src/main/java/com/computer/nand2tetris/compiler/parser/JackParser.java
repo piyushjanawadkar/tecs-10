@@ -1,23 +1,37 @@
 package com.computer.nand2tetris.compiler.parser;
 
+import static com.google.common.collect.ImmutableSet.toImmutableSet;
+
+import com.computer.nand2tetris.compiler.ErrorMessageGenerator;
 import com.computer.nand2tetris.compiler.JackToken;
+import com.computer.nand2tetris.compiler.LookAheadStream;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
 import java.io.BufferedWriter;
-import java.io.IOException;
 
 public class JackParser {
 
-  public void parse(ImmutableList<JackToken> tokens, BufferedWriter writer) {
+  private static final ImmutableSet<TokenSequenceParser> TOKEN_SEQUENCE_PARSERS = ImmutableSet.of(
+      new TokenWriter()
+  );
 
-    tokens.stream().forEachOrdered(t -> write(t.toString(), writer));
+  public void parse(ImmutableList<JackToken> tokens, BufferedWriter writer) {
+    LookAheadStream<JackToken> tokenStream = new LookAheadStream(tokens);
+    while (tokenStream.peek().isPresent()) {
+      TokenSequenceParser tokenSequenceParser = getOnlyTokenSequenceParser(
+          tokenStream.peek().get());
+      tokenSequenceParser.parse(tokenStream, writer);
+    }
   }
 
-  private void write(String tokenString, BufferedWriter writer) {
-    try {
-      writer.write(tokenString);
-      writer.newLine();
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
+  private TokenSequenceParser getOnlyTokenSequenceParser(JackToken token) {
+    ImmutableSet<TokenSequenceParser> parsers = TOKEN_SEQUENCE_PARSERS.stream()
+        .filter(p -> p.matches(token)).collect(toImmutableSet());
+    Preconditions.checkArgument(parsers.size() == 1,
+        "Exactly 1 token sequence parser expected for token: %s. Found [%s]", token.toString(),
+        ErrorMessageGenerator.generateClassNameCsv(parsers));
+    return Iterables.getOnlyElement(parsers);
   }
 }

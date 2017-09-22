@@ -3,6 +3,7 @@ package com.computer.nand2tetris.compiler.tokenizer;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 
+import com.computer.nand2tetris.compiler.ErrorMessageGenerator;
 import com.computer.nand2tetris.compiler.JackToken;
 import com.computer.nand2tetris.compiler.JackToken.TokenType;
 import com.computer.nand2tetris.compiler.LookAheadStream;
@@ -12,7 +13,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import java.io.BufferedReader;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class JackTokenizer {
@@ -53,13 +53,7 @@ public class JackTokenizer {
     Preconditions.checkArgument(tokenExtractorsMatchingLookAhead.size() == 1,
         "Exactly one token extractor expected for lookahead *%s*. Found [%s]",
         lookAhead,
-        generateTokenExtractorsDebugString(tokenExtractorsMatchingLookAhead));
+        ErrorMessageGenerator.generateClassNameCsv(tokenExtractorsMatchingLookAhead));
     return Iterables.getOnlyElement(tokenExtractorsMatchingLookAhead);
-  }
-
-  private static String generateTokenExtractorsDebugString(
-      ImmutableSet<JackTokenExtractor> tokenExtractors) {
-    return tokenExtractors.stream().map(x -> x.getClass().getSimpleName())
-        .collect(Collectors.joining(", "));
   }
 }
