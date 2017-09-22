@@ -9,6 +9,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import java.io.BufferedReader;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -32,7 +33,7 @@ public class JackTokenizer {
   }
 
   private static Stream<JackToken> tokenizeLine(String line) {
-    LookAheadStream lookAheadStream = new LookAheadStream(line);
+    LookAheadStream<Character> lookAheadStream = new LookAheadStream(Lists.charactersOf(line));
     ImmutableList.Builder<JackToken> builder = ImmutableList.builder();
     while (lookAheadStream.peek().isPresent()) {
       JackTokenExtractor tokenExtractor = getOnlyTokenExtractorForLookAhead(

@@ -1,41 +1,38 @@
 package com.computer.nand2tetris.compiler.tokenizer;
 
 import com.google.common.base.Optional;
+import com.google.common.collect.ImmutableList;
+import java.util.List;
 
-final class LookAheadStream {
+final class LookAheadStream<T> {
 
-  private String line;
-  private int lookAheadIndex;
+  Optional<T> lookAhead = Optional.absent();
+  List<T> restItems = ImmutableList.of();
 
-  LookAheadStream(String line) {
-    this.line = line;
-    lookAheadIndex = 0;
+  LookAheadStream(ImmutableList<T> items) {
+    resetStateFromList(items);
   }
 
-  Optional<Character> peek() {
-    return hasLookAhead() ? Optional.of(getLookAhead()) : Optional.absent();
+  private void resetStateFromList(List<T> items) {
+    lookAhead = Optional.absent();
+    if (!items.isEmpty()) {
+      lookAhead = Optional.of(items.get(0));
+      restItems = items.subList(1, items.size());
+    }
   }
 
-  Optional<Character> extract() {
-    Optional<Character> extractedLookAhead = peek();
-    lookAheadIndex++;
+  Optional<T> peek() {
+    return lookAhead;
+  }
+
+  Optional<T> extract() {
+    Optional<T> extractedLookAhead = peek();
+    resetStateFromList(restItems);
     return extractedLookAhead;
-  }
-
-  private boolean hasLookAhead() {
-    return lookAheadIndex < line.length();
-  }
-
-  private char getLookAhead() {
-    return line.charAt(lookAheadIndex);
   }
 
   @Override
   public String toString() {
-    return "lookAhead: " + peek() + ", stream: " + getRemainingStream();
-  }
-
-  private String getRemainingStream() {
-    return line.substring(lookAheadIndex);
+    return "lookAhead: " + peek() + ", stream: " + restItems.toString();
   }
 }

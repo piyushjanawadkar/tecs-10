@@ -6,7 +6,7 @@ import com.google.common.base.Preconditions;
 class StringConstantTokenExtractor implements JackTokenExtractor {
 
   @Override
-  public JackToken extractToken(LookAheadStream lookAheadStream) {
+  public JackToken extractToken(LookAheadStream<Character> lookAheadStream) {
     StringBuilder builder = new StringBuilder();
 
     lookAheadStream.extract(); // consume the leading double quote.

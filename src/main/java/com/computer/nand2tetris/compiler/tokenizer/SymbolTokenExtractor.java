@@ -12,7 +12,7 @@ class SymbolTokenExtractor implements JackTokenExtractor {
       '|', '<', '>', '=', '~');
 
   @Override
-  public JackToken extractToken(LookAheadStream lookAheadStream) {
+  public JackToken extractToken(LookAheadStream<Character> lookAheadStream) {
     Character symbol = lookAheadStream.extract().get();
     return JackToken.create(JackToken.TokenType.SYMBOL, symbol.toString());
   }

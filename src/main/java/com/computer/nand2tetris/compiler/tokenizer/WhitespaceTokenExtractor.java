@@ -6,7 +6,7 @@ import com.computer.nand2tetris.compiler.JackToken.TokenType;
 public class WhitespaceTokenExtractor implements JackTokenExtractor {
 
   @Override
-  public JackToken extractToken(LookAheadStream lookAheadStream) {
+  public JackToken extractToken(LookAheadStream<Character> lookAheadStream) {
     while (lookAheadStream.peek().isPresent() && matches(lookAheadStream.peek().get())) {
       lookAheadStream.extract();
     }

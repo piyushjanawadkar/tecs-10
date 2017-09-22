@@ -26,7 +26,7 @@ class IdentifierOrKeywordTokenExtractor implements JackTokenExtractor {
   }
 
   @Override
-  public JackToken extractToken(LookAheadStream lookAheadStream) {
+  public JackToken extractToken(LookAheadStream<Character> lookAheadStream) {
     StringBuilder builder = new StringBuilder();
 
     while (lookAheadStream.peek().isPresent() && isIdentifierCharacter(
