@@ -1,16 +1,26 @@
-package com.computer.nand2tetris.compiler.tokenizer;
+package com.computer.nand2tetris.compiler;
 
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import java.util.List;
 
-final class LookAheadStream<T> {
+public final class LookAheadStream<T> {
 
   Optional<T> lookAhead = Optional.absent();
   List<T> restItems = ImmutableList.of();
 
-  LookAheadStream(ImmutableList<T> items) {
+  public LookAheadStream(ImmutableList<T> items) {
     resetStateFromList(items);
+  }
+
+  public Optional<T> peek() {
+    return lookAhead;
+  }
+
+  public Optional<T> extract() {
+    Optional<T> extractedLookAhead = peek();
+    resetStateFromList(restItems);
+    return extractedLookAhead;
   }
 
   private void resetStateFromList(List<T> items) {
@@ -19,16 +29,6 @@ final class LookAheadStream<T> {
       lookAhead = Optional.of(items.get(0));
       restItems = items.subList(1, items.size());
     }
-  }
-
-  Optional<T> peek() {
-    return lookAhead;
-  }
-
-  Optional<T> extract() {
-    Optional<T> extractedLookAhead = peek();
-    resetStateFromList(restItems);
-    return extractedLookAhead;
   }
 
   @Override

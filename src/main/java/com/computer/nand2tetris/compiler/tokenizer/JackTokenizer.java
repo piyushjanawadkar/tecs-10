@@ -5,6 +5,7 @@ import static com.google.common.collect.ImmutableSet.toImmutableSet;
 
 import com.computer.nand2tetris.compiler.JackToken;
 import com.computer.nand2tetris.compiler.JackToken.TokenType;
+import com.computer.nand2tetris.compiler.LookAheadStream;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;

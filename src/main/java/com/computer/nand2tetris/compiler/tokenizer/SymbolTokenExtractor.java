@@ -1,7 +1,7 @@
 package com.computer.nand2tetris.compiler.tokenizer;
 
 import com.computer.nand2tetris.compiler.JackToken;
-import com.computer.nand2tetris.compiler.tokenizer.JackTokenExtractor;
+import com.computer.nand2tetris.compiler.LookAheadStream;
 import com.google.common.collect.ImmutableSet;
 
 class SymbolTokenExtractor implements JackTokenExtractor {
