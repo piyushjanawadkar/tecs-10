@@ -33,6 +33,7 @@ public final class LookAheadStream<T> {
 
   @Override
   public String toString() {
-    return "lookAhead: " + peek() + ", stream: " + restItems.toString();
+    return "lookAhead: " + (peek().isPresent() ? peek().get() : "nil") + ", stream: " + restItems
+        .toString();
   }
 }

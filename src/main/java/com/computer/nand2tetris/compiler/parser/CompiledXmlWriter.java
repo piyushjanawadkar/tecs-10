@@ -11,27 +11,15 @@ public class CompiledXmlWriter implements CompiledCodeWriter {
   private final BufferedWriter writer;
   StringBuilder indentation = new StringBuilder();
 
-  public CompiledXmlWriter(BufferedWriter writer) {
+  CompiledXmlWriter(BufferedWriter writer) {
     this.writer = writer;
   }
 
   @Override
-  public void writeOpenNonTerminalTag(String terminalText) {
+  public void writeOpeningNonTerminalTag(String terminalText) {
     indentAndWrite(createTag(terminalText));
     increaseIndentation();
     writeNewline();
-  }
-
-  private void increaseIndentation() {
-    indentation.append(INDENTATION_UNIT);
-  }
-
-  private void indent() {
-    write(indentation.toString());
-  }
-
-  private static String createTag(String tagText) {
-    return "<" + tagText + ">";
   }
 
   @Override
@@ -49,8 +37,25 @@ public class CompiledXmlWriter implements CompiledCodeWriter {
     writeNewline();
   }
 
+  private void increaseIndentation() {
+    indentation.append(INDENTATION_UNIT);
+  }
+
   private void decreaseIndentation() {
     indentation.delete(indentation.length() - INDENTATION_UNIT.length(), indentation.length());
+  }
+
+  private void indent() {
+    write(indentation.toString());
+  }
+
+  private void indentAndWrite(String text) {
+    indent();
+    write(text);
+  }
+
+  private static String createTag(String tagText) {
+    return "<" + tagText + ">";
   }
 
   private String createClosingTag(String tagText) {
@@ -71,10 +76,5 @@ public class CompiledXmlWriter implements CompiledCodeWriter {
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
-  }
-
-  private void indentAndWrite(String text) {
-    indent();
-    write(text);
   }
 }

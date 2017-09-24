@@ -20,4 +20,9 @@ public abstract class JackToken {
 
   public abstract TokenType tokenType();
   public abstract String tokenText();
+
+  @Override
+  public String toString() {
+    return String.format("(%s, %s)", tokenType(), tokenText());
+  }
 }
