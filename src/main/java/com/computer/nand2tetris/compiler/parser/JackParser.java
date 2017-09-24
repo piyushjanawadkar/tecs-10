@@ -29,153 +29,123 @@ public class JackParser {
           "method"
       );
 
-  private static void parseClass(LookAheadStream<JackToken> tokens, CompiledCodeWriter writer) {
+  private LookAheadStream<JackToken> tokens;
+  private CompiledXmlWriter writer;
+
+  public void parse(ImmutableList<JackToken> tokenList, BufferedWriter bufferedWriter) {
+    tokens = new LookAheadStream<>(tokenList);
+    writer = new CompiledXmlWriter(bufferedWriter);
+    parseClass();
+    Preconditions.checkArgument(tokens.isEmpty(), "Unexpected trailing tokens: %s", tokens);
+  }
+
+  private void parseClass() {
     writer.writeOpeningNonTerminalTag("class");
-    match("class", tokens, writer);
-    parseClassName(tokens, writer);
-    match("{", tokens, writer);
-    parseClassVarDecs(tokens, writer);
-    parseSubroutineDecs(tokens, writer);
-    match("}", tokens, writer);
+    match("class");
+    parseClassName();
+    match("{");
+    parseClassVarDecs();
+    parseSubroutineDecs();
+    match("}");
     writer.writeClosingNonTerminalTag("class");
   }
 
-  private static void parseClassVarDecs(LookAheadStream<JackToken> tokens,
-      CompiledCodeWriter writer) {
-    while (tokens.peek().isPresent()
-        && CLASS_VAR_DEC_LOOKAHEAD_TOKENS.contains(tokens.peek().get().tokenText())) {
-      parseClassVarDec(tokens, writer);
+  private void match(String tokenText) {
+    match(ImmutableSet.of(tokenText));
+  }
+
+  private void match(
+      ImmutableSet<String> tokenTexts) {
+    Preconditions.checkArgument(
+        !tokens.isEmpty(),
+        "No further tokens. Expected %s.", tokenTexts);
+    JackToken token = tokens.extract().get();
+    Preconditions.checkArgument(
+        tokenTexts.contains(token.tokenText()),
+        "Expected %s but found %s.", tokenTexts, token.toString());
+    writer.writeTerminal(token);
+  }
+
+  private void parseClassName() {
+    parseIdentifier();
+  }
+
+  private void parseClassVarDecs() {
+    while (!tokens.isEmpty()
+        && CLASS_VAR_DEC_LOOKAHEAD_TOKENS.contains(getPeekedToken(tokens).tokenText())) {
+      parseClassVarDec();
     }
   }
 
-  private static void parseClassVarDec(LookAheadStream<JackToken> tokens,
-      CompiledCodeWriter writer) {
+  private void parseClassVarDec() {
     writer.writeOpeningNonTerminalTag("classVarDec");
-    match(CLASS_VAR_DEC_LOOKAHEAD_TOKENS, tokens, writer);
-    parseType(tokens, writer);
-    parseVarName(tokens, writer);
-    while (tokens.peek().get().tokenText().equals(",")) {
-      match(",", tokens, writer);
-      parseVarName(tokens, writer);
+    match(CLASS_VAR_DEC_LOOKAHEAD_TOKENS);
+    parseType();
+    parseVarName();
+    while (hasLookaheadText(",")) {
+      match(",");
+      parseVarName();
     }
-    match(";", tokens, writer);
+    match(";");
     writer.writeClosingNonTerminalTag("classVarDec");
   }
 
-  private static void parseVarName(LookAheadStream<JackToken> tokens, CompiledCodeWriter writer) {
-    parseIdentifier(tokens, writer);
-  }
 
-  private static void parseType(LookAheadStream<JackToken> tokens, CompiledCodeWriter writer) {
-    if (tokens.peek().get().tokenType().equals(TokenType.IDENTIFIER)) {
-      parseIdentifier(tokens, writer);
-    } else {
-      match(PRIMITIVE_TYPE_TOKENS, tokens, writer);
+  private void parseSubroutineDecs() {
+    while (SUBROUTINE_DEC_LOOK_AHEAD_TOKENS.contains(getPeekedToken(tokens).tokenText())) {
+      parseSubroutineDec();
     }
   }
 
-  private static void parseSubroutineDecs(LookAheadStream<JackToken> tokens,
-      CompiledCodeWriter writer) {
-    while (SUBROUTINE_DEC_LOOK_AHEAD_TOKENS.contains(tokens.peek().get().tokenText())) {
-      parseSubroutineDec(tokens, writer);
-    }
-  }
-
-  private static void parseSubroutineDec(
-      LookAheadStream<JackToken> tokens,
-      CompiledCodeWriter writer) {
+  private void parseSubroutineDec() {
     writer.writeOpeningNonTerminalTag("subroutineDec");
-    match(SUBROUTINE_DEC_LOOK_AHEAD_TOKENS, tokens, writer);
-    parseSubroutineReturnType(tokens, writer);
-    parseSubroutineName(tokens, writer);
-    match("(", tokens, writer);
-    parseSubroutineParameterList(tokens, writer);
-    match(")", tokens, writer);
-    parseSubroutineBody(tokens, writer);
+    match(SUBROUTINE_DEC_LOOK_AHEAD_TOKENS);
+    parseSubroutineReturnType();
+    parseSubroutineName();
+    match("(");
+    parseSubroutineParameterList();
+    match(")");
+    parseSubroutineBody();
     writer.writeClosingNonTerminalTag("subroutineDec");
   }
 
-  private static void parseSubroutineBody(
-      LookAheadStream<JackToken> tokens,
-      CompiledCodeWriter writer) {
-    match("{", tokens, writer);
-    parseVarDecs(tokens, writer);
-    parseStatements();
-    match("}", tokens, writer);
+  private void parseSubroutineReturnType() {
+    if (hasTypeLookaheadToken()) {
+      parseType();
+    } else {
+      match("void");
+    }
   }
 
-  private static void parseStatements() {
+  private void parseSubroutineName() {
+    parseIdentifier();
   }
 
-  private static void parseVarDecs(LookAheadStream<JackToken> tokens, CompiledCodeWriter writer) {
-
-  }
-
-  private static void parseSubroutineParameterList(
-      LookAheadStream<JackToken> tokens,
-      CompiledCodeWriter writer) {
-    if (!hasTypeLookaheadToken(tokens)) {
+  private void parseSubroutineParameterList() {
+    if (!hasTypeLookaheadToken()) {
       return;
     }
-    parseTypedVarName(tokens, writer);
-    while (hasLookaheadText(",", tokens)) {
-      match(",", tokens, writer);
-      parseTypedVarName(tokens, writer);
+    parseTypedVarName();
+    while (hasLookaheadText(",")) {
+      match(",");
+      parseTypedVarName();
     }
   }
 
-  private static void parseTypedVarName(
-      LookAheadStream<JackToken> tokens,
-      CompiledCodeWriter writer) {
-    parseType(tokens, writer);
-    parseVarName(tokens, writer);
+  private void parseSubroutineBody() {
+    match("{");
+    parseVarDecs();
+    parseStatements();
+    match("}");
   }
 
-  private static boolean hasLookaheadText(String expectedText, LookAheadStream<JackToken> tokens) {
-    return hasLookaheadText(ImmutableSet.of(expectedText), tokens);
+  private void parseVarDecs() {
   }
 
-  private static boolean hasTypeLookaheadToken(LookAheadStream<JackToken> tokens) {
-    return hasLookaheadText(PRIMITIVE_TYPE_TOKENS, tokens)
-        || hasLookaheadType(TokenType.IDENTIFIER, tokens);
+  private void parseStatements() {
   }
 
-  private static boolean hasLookaheadType(TokenType tokenType, LookAheadStream<JackToken> tokens) {
-    return getPeekedToken(tokens).tokenType().equals(tokenType);
-  }
-
-  private static boolean hasLookaheadText(
-      ImmutableSet<String> expectedTokenTexts,
-      LookAheadStream<JackToken> tokens) {
-    return expectedTokenTexts.contains(getPeekedToken(tokens).tokenText());
-  }
-
-  private static JackToken getPeekedToken(LookAheadStream<JackToken> tokens) {
-    return tokens.peek().get();
-  }
-
-  private static void parseSubroutineName(
-      LookAheadStream<JackToken> tokens,
-      CompiledCodeWriter writer) {
-    parseIdentifier(tokens, writer);
-  }
-
-  private static void parseSubroutineReturnType(
-      LookAheadStream<JackToken> tokens,
-      CompiledCodeWriter writer) {
-    if (hasTypeLookaheadToken(tokens)) {
-      parseType(tokens, writer);
-    } else {
-      match("void", tokens, writer);
-    }
-  }
-
-  private static void parseClassName(LookAheadStream<JackToken> tokens, CompiledCodeWriter writer) {
-    parseIdentifier(tokens, writer);
-  }
-
-  private static void parseIdentifier(LookAheadStream<JackToken> tokens,
-      CompiledCodeWriter writer) {
+  private void parseIdentifier() {
     Preconditions
         .checkArgument(tokens.peek().isPresent(), "No further tokens. Expected identifier.");
     JackToken token = tokens.extract().get();
@@ -185,30 +155,40 @@ public class JackParser {
     writer.writeTerminal(token);
   }
 
-  private static void match(
-      String tokenText,
-      LookAheadStream<JackToken> tokens,
-      CompiledCodeWriter writer) {
-    match(ImmutableSet.of(tokenText), tokens, writer);
+  private void parseType() {
+    if (getPeekedToken(tokens).tokenType().equals(TokenType.IDENTIFIER)) {
+      parseIdentifier();
+    } else {
+      match(PRIMITIVE_TYPE_TOKENS);
+    }
   }
 
-  private static void match(
-      ImmutableSet<String> tokenTexts,
-      LookAheadStream<JackToken> tokens,
-      CompiledCodeWriter writer) {
-    Preconditions.checkArgument(
-        tokens.peek().isPresent(),
-        "No further tokens. Expected %s.", tokenTexts);
-    JackToken token = tokens.extract().get();
-    Preconditions.checkArgument(
-        tokenTexts.contains(token.tokenText()),
-        "Expected %s but found %s.", tokenTexts, token.toString());
-    writer.writeTerminal(token);
+  private boolean hasTypeLookaheadToken() {
+    return hasLookaheadText(PRIMITIVE_TYPE_TOKENS) || hasLookaheadType(TokenType.IDENTIFIER);
   }
 
-  public void parse(ImmutableList<JackToken> tokens, BufferedWriter bufferedWriter) {
-    LookAheadStream<JackToken> tokenStream = new LookAheadStream<>(tokens);
-    CompiledCodeWriter writer = new CompiledXmlWriter(bufferedWriter);
-    parseClass(tokenStream, writer);
+  private void parseTypedVarName() {
+    parseType();
+    parseVarName();
+  }
+
+  private void parseVarName() {
+    parseIdentifier();
+  }
+
+  private boolean hasLookaheadText(ImmutableSet<String> expectedTokenTexts) {
+    return expectedTokenTexts.contains(getPeekedToken(tokens).tokenText());
+  }
+
+  private boolean hasLookaheadText(String expectedText) {
+    return hasLookaheadText(ImmutableSet.of(expectedText));
+  }
+
+  private boolean hasLookaheadType(TokenType tokenType) {
+    return getPeekedToken(tokens).tokenType().equals(tokenType);
+  }
+
+  private static JackToken getPeekedToken(LookAheadStream<JackToken> tokens) {
+    return tokens.peek().get();
   }
 }

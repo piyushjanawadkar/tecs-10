@@ -36,4 +36,8 @@ public final class LookAheadStream<T> {
     return "lookAhead: " + (peek().isPresent() ? peek().get() : "nil")
         + ", stream: " + restItems.toString();
   }
+
+  public boolean isEmpty() {
+    return !peek().isPresent();
+  }
 }
