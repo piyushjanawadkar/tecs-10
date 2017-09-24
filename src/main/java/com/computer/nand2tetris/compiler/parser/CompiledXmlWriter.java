@@ -59,7 +59,7 @@ public class CompiledXmlWriter implements CompiledCodeWriter {
   }
 
   private String createClosingTag(String tagText) {
-    return String.format("/%s", tagText);
+    return createTag(String.format("/%s", tagText));
   }
 
   private void write(String text) {
