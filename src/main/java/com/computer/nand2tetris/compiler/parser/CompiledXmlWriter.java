@@ -55,11 +55,11 @@ public class CompiledXmlWriter implements CompiledCodeWriter {
   }
 
   private static String createTag(String tagText) {
-    return "<" + tagText + ">";
+    return String.format("<%s>", tagText);
   }
 
   private String createClosingTag(String tagText) {
-    return createTag("/" + tagText);
+    return String.format("/%s", tagText);
   }
 
   private void write(String text) {

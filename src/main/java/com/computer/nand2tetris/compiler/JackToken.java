@@ -23,6 +23,6 @@ public abstract class JackToken {
 
   @Override
   public String toString() {
-    return String.format("(%s, %s)", tokenType(), tokenText());
+    return String.format("(%s: %s)", tokenType(), tokenText());
   }
 }
