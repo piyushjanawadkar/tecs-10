@@ -1,37 +1,64 @@
 package com.computer.nand2tetris.compiler.parser;
 
-import static com.google.common.collect.ImmutableSet.toImmutableSet;
-
-import com.computer.nand2tetris.compiler.ErrorMessageGenerator;
 import com.computer.nand2tetris.compiler.JackToken;
+import com.computer.nand2tetris.compiler.JackToken.TokenType;
 import com.computer.nand2tetris.compiler.LookAheadStream;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
 import java.io.BufferedWriter;
 
 public class JackParser {
 
-  private static final ImmutableSet<TokenSequenceParser> TOKEN_SEQUENCE_PARSERS = ImmutableSet.of(
-      new TokenWriter()
-  );
-
-  public void parse(ImmutableList<JackToken> tokens, BufferedWriter writer) {
-    LookAheadStream<JackToken> tokenStream = new LookAheadStream(tokens);
-    while (tokenStream.peek().isPresent()) {
-      TokenSequenceParser tokenSequenceParser = getOnlyTokenSequenceParser(
-          tokenStream.peek().get());
-      tokenSequenceParser.parse(tokenStream, writer);
-    }
+  public void parse(ImmutableList<JackToken> tokens, BufferedWriter bufferedWriter) {
+    LookAheadStream<JackToken> tokenStream = new LookAheadStream<>(tokens);
+    CompiledCodeWriter writer = new CompiledXmlWriter(bufferedWriter);
+    parseClass(tokenStream, writer);
   }
 
-  private TokenSequenceParser getOnlyTokenSequenceParser(JackToken token) {
-    ImmutableSet<TokenSequenceParser> parsers = TOKEN_SEQUENCE_PARSERS.stream()
-        .filter(p -> p.matches(token)).collect(toImmutableSet());
-    Preconditions.checkArgument(parsers.size() == 1,
-        "Exactly 1 token sequence parser expected for token: %s. Found [%s]", token.toString(),
-        ErrorMessageGenerator.generateClassNamesCsv(parsers));
-    return Iterables.getOnlyElement(parsers);
+  private void parseClass(LookAheadStream<JackToken> tokens, CompiledCodeWriter writer) {
+    writer.writeOpenNonTerminalTag("class");
+    match("class", tokens, writer);
+    parseClassName(tokens, writer);
+    match("{", tokens, writer);
+    parseClassVarDecs(tokens, writer);
+    parseSubroutineDecs(tokens, writer);
+    match("}", tokens, writer);
+    writer.writeClosingNonTerminalTag("class");
+  }
+
+  private void parseClassVarDecs(LookAheadStream<JackToken> tokens, CompiledCodeWriter writer) {
+    // TODO
+  }
+
+  private void parseSubroutineDecs(LookAheadStream<JackToken> tokens, CompiledCodeWriter writer) {
+    // TODO
+  }
+
+
+
+  private void parseClassName(LookAheadStream<JackToken> tokens, CompiledCodeWriter writer) {
+    parseIdentifier(tokens, writer);
+  }
+
+  private void parseIdentifier(LookAheadStream<JackToken> tokens, CompiledCodeWriter writer) {
+    Preconditions
+        .checkArgument(tokens.peek().isPresent(), "No further tokens. Expected identifier.");
+    JackToken token = tokens.extract().get();
+    Preconditions.checkArgument(
+        token.tokenType().equals(TokenType.IDENTIFIER),
+        "Expected %s but found %s.", TokenType.IDENTIFIER, token.toString());
+    writer.writeTerminal(token);
+  }
+
+  private void match(String tokenText, LookAheadStream<JackToken> tokens,
+      CompiledCodeWriter writer) {
+    Preconditions.checkArgument(
+        tokens.peek().isPresent(),
+        "No further tokens. Expected %s.", tokenText);
+    JackToken token = tokens.extract().get();
+    Preconditions.checkArgument(
+        token.tokenText().equals(tokenText),
+        "Expected %s but found %s.", tokenText, token.toString());
+    writer.writeTerminal(token);
   }
 }

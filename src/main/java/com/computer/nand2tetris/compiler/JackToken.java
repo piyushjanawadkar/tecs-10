@@ -6,7 +6,12 @@ import com.google.auto.value.AutoValue;
 public abstract class JackToken {
 
   public enum TokenType {
-    WHITESPACE, SYMBOL, INTEGER_CONSTANT, STRING_CONSTANT, KEYWORD, IDENTIFIER,
+    WHITESPACE, SYMBOL, INTEGER_CONSTANT, STRING_CONSTANT, KEYWORD, IDENTIFIER;
+
+    @Override
+    public String toString() {
+      return name().toLowerCase();
+    }
   }
 
   public static JackToken create(TokenType tokenType, String tokenText) {

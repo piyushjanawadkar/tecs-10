@@ -9,7 +9,7 @@ import java.util.Arrays;
 abstract class IOPaths {
 
   static IOPaths create(String[] args) {
-    return new AutoValue_IOPaths(ImmutableList.of("/tmp/input.txt"), "/tmp/output.txt");
+    return new AutoValue_IOPaths(ImmutableList.of("/tmp/inputclass.txt"), "/tmp/output.txt");
     /*String location = extractLocation(args);
     if (isJackFile(location)) {
       return createFromJackFile(location);
