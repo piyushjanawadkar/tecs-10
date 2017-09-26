@@ -1,8 +1,12 @@
 package com.computer.nand2tetris.compiler;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
+
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Streams;
 import java.util.List;
+import java.util.stream.Stream;
 
 public final class LookAheadStream<T> {
 
@@ -39,5 +43,16 @@ public final class LookAheadStream<T> {
 
   public boolean isEmpty() {
     return !peek().isPresent();
+  }
+
+  public void putBack(T token) {
+    if (!isEmpty()) {
+      restItems = concat(lookAhead.get(), restItems);
+    }
+    lookAhead = Optional.of(token);
+  }
+
+  private List<T> concat(T lookAhead, List<T> restItems) {
+    return Streams.concat(Stream.of(lookAhead), restItems.stream()).collect(toImmutableList());
   }
 }
