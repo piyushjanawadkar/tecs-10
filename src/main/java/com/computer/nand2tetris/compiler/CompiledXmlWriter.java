@@ -1,36 +1,37 @@
-package com.computer.nand2tetris.compiler.parser;
+package com.computer.nand2tetris.compiler;
 
-import com.computer.nand2tetris.compiler.JackToken;
 import java.io.BufferedWriter;
 import java.io.IOException;
 
-public class CompiledXmlWriter implements CompiledCodeWriter {
+public class CompiledXmlWriter implements JackElementVisitor {
 
   private static final String INDENTATION_UNIT = "  ";  // 2 spaces
 
   private final BufferedWriter writer;
-  StringBuilder indentation = new StringBuilder();
+  private StringBuilder indentation = new StringBuilder();
+  private Context context;
 
   CompiledXmlWriter(BufferedWriter writer) {
+    this.context = context;
     this.writer = writer;
   }
 
   @Override
-  public void writeOpeningNonTerminalTag(String terminalText) {
-    indentAndWrite(createTag(terminalText));
+  public void visitNonTerminalBeginElement(String nonTerminalText) {
+    indentAndWrite(createTag(nonTerminalText));
     increaseIndentation();
     writeNewline();
   }
 
   @Override
-  public void writeClosingNonTerminalTag(String terminalText) {
+  public void visitNonTerminalEndElement(String nonTerminalText) {
     decreaseIndentation();
-    indentAndWrite(createClosingTag(terminalText));
+    indentAndWrite(createClosingTag(nonTerminalText));
     writeNewline();
   }
 
   @Override
-  public void writeTerminal(JackToken token) {
+  public void visitTerminal(JackToken token) {
     indentAndWrite(createTag(token.tokenType().toString()));
     write(token.tokenText());
     write(createClosingTag(token.tokenType().toString()));

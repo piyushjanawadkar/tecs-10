@@ -1,20 +1,17 @@
 package com.computer.nand2tetris.compiler;
 
-import static com.google.common.collect.ImmutableList.toImmutableList;
-
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Streams;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.stream.Stream;
 
 public final class LookAheadStream<T> {
 
   Optional<T> lookAhead = Optional.absent();
-  List<T> restItems = ImmutableList.of();
+  List<T> restItems = new LinkedList<>();
 
   public LookAheadStream(ImmutableList<T> items) {
-    resetStateFromList(items);
+    resetStateFromList(new LinkedList<T>(items));
   }
 
   public Optional<T> peek() {
@@ -47,12 +44,12 @@ public final class LookAheadStream<T> {
 
   public void putBack(T token) {
     if (!isEmpty()) {
-      restItems = concat(lookAhead.get(), restItems);
+      concat(lookAhead.get(), restItems);
     }
     lookAhead = Optional.of(token);
   }
 
-  private List<T> concat(T lookAhead, List<T> restItems) {
-    return Streams.concat(Stream.of(lookAhead), restItems.stream()).collect(toImmutableList());
+  private void concat(T lookAhead, List<T> restItems) {
+    restItems.add(0, lookAhead);
   }
 }

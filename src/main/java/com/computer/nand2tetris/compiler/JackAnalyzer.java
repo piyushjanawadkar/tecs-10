@@ -2,6 +2,7 @@ package com.computer.nand2tetris.compiler;
 
 import com.computer.nand2tetris.compiler.parser.JackParser;
 import com.computer.nand2tetris.compiler.tokenizer.JackTokenizer;
+import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -31,7 +32,9 @@ final class JackAnalyzer {
     try {
       BufferedReader reader = createReader(filePath);
       ImmutableList<JackToken> tokens = tokenizer.tokenize(reader);
-      parser.parse(tokens, writer);
+      Context context = new Context();
+      parser.parse(tokens, Optional.absent(), context);
+      parser.parse(tokens, Optional.of(context), new CompiledXmlWriter(writer));
       reader.close();
     } catch (IOException e) {
       throw new RuntimeException(e);

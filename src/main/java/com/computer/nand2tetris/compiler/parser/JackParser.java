@@ -1,5 +1,7 @@
 package com.computer.nand2tetris.compiler.parser;
 
+import com.computer.nand2tetris.compiler.Context;
+import com.computer.nand2tetris.compiler.JackElementVisitor;
 import com.computer.nand2tetris.compiler.JackToken;
 import com.computer.nand2tetris.compiler.JackToken.TokenType;
 import com.computer.nand2tetris.compiler.LookAheadStream;
@@ -8,7 +10,6 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import java.io.BufferedWriter;
 
 public class JackParser {
 
@@ -32,7 +33,7 @@ public class JackParser {
       );
 
   private LookAheadStream<JackToken> tokens;
-  private CompiledXmlWriter writer;
+  private JackElementVisitor visitor;
   private ImmutableMap<String, Runnable> statementParserByLookahead =
       ImmutableMap.of(
           "let", this::parseLetStatement,
@@ -40,23 +41,28 @@ public class JackParser {
           "while", this::parseWhileStatement,
           "do", this::parseDoStatement,
           "return", this::parseReturnStatement);
+  private Optional<Context> context;
 
-  public void parse(ImmutableList<JackToken> tokenList, BufferedWriter bufferedWriter) {
+  public void parse(
+      ImmutableList<JackToken> tokenList,
+      Optional<Context> context,
+      JackElementVisitor visitor) {
     tokens = new LookAheadStream<>(tokenList);
-    writer = new CompiledXmlWriter(bufferedWriter);
+    this.context = context;
+    this.visitor = visitor;
     parseClass();
     Preconditions.checkArgument(tokens.isEmpty(), "Unexpected trailing tokens: %s", tokens);
   }
 
   private void parseClass() {
-    writer.writeOpeningNonTerminalTag("class");
+    visitor.visitNonTerminalBeginElement("class");
     match("class");
     parseClassName();
     match("{");
     parseClassVarDecs();
     parseSubroutineDecs();
     match("}");
-    writer.writeClosingNonTerminalTag("class");
+    visitor.visitNonTerminalEndElement("class");
   }
 
   private void match(String tokenText) {
@@ -72,15 +78,11 @@ public class JackParser {
     Preconditions.checkArgument(
         tokenTexts.contains(token.tokenText()),
         "Expected %s but found %s.", tokenTexts, token.toString());
-    writer.writeTerminal(token);
+    visitor.visitTerminal(token);
   }
 
   private void parseClassName() {
     parseIdentifier();
-  }
-
-  private JackToken extractClassName() {
-    return extractIdentifier();
   }
 
   private void parseClassVarDecs() {
@@ -91,7 +93,7 @@ public class JackParser {
   }
 
   private void parseClassVarDec() {
-    writer.writeOpeningNonTerminalTag("classVarDec");
+    visitor.visitNonTerminalBeginElement("classVarDec");
     match(CLASS_VAR_DEC_LOOKAHEAD_TOKENS);
     parseType();
     parseVarName();
@@ -100,7 +102,7 @@ public class JackParser {
       parseVarName();
     }
     match(";");
-    writer.writeClosingNonTerminalTag("classVarDec");
+    visitor.visitNonTerminalEndElement("classVarDec");
   }
 
   private void parseSubroutineDecs() {
@@ -110,7 +112,7 @@ public class JackParser {
   }
 
   private void parseSubroutineDec() {
-    writer.writeOpeningNonTerminalTag("subroutineDec");
+    visitor.visitNonTerminalBeginElement("subroutineDec");
     match(SUBROUTINE_DEC_LOOK_AHEAD_TOKENS);
     parseSubroutineReturnType();
     parseSubroutineName();
@@ -118,7 +120,7 @@ public class JackParser {
     parseSubroutineParameterList();
     match(")");
     parseSubroutineBody();
-    writer.writeClosingNonTerminalTag("subroutineDec");
+    visitor.visitNonTerminalEndElement("subroutineDec");
   }
 
   private void parseSubroutineReturnType() {
@@ -173,12 +175,12 @@ public class JackParser {
     while (hasStatementLookaheadToken()) {
       if (!shouldWriteNonTerminalTag) {
         shouldWriteNonTerminalTag = true;
-        writer.writeOpeningNonTerminalTag("statements");
+        visitor.visitNonTerminalBeginElement("statements");
       }
       parseStatement();
     }
     if (shouldWriteNonTerminalTag) {
-      writer.writeClosingNonTerminalTag("statements");
+      visitor.visitNonTerminalEndElement("statements");
     }
   }
 
@@ -202,7 +204,7 @@ public class JackParser {
   }
 
   private void parseIdentifier() {
-    writer.writeTerminal(extractIdentifier());
+    visitor.visitTerminal(extractIdentifier());
   }
 
   private JackToken extractIdentifier() {
@@ -224,7 +226,7 @@ public class JackParser {
   }
 
   private void parseLetStatement() {
-    writer.writeOpeningNonTerminalTag("letStatement");
+    visitor.visitNonTerminalBeginElement("letStatement");
     match("let");
     parseVarName();
     if (getPeekedToken().tokenText().equals("[")) {
@@ -235,11 +237,11 @@ public class JackParser {
     match("=");
     parseExpression();
     match(";");
-    writer.writeClosingNonTerminalTag("letStatement");
+    visitor.visitNonTerminalEndElement("letStatement");
   }
 
   private void parseIfStatement() {
-    writer.writeOpeningNonTerminalTag("ifStatement");
+    visitor.visitNonTerminalBeginElement("ifStatement");
 
     match("if");
     match("(");
@@ -257,11 +259,11 @@ public class JackParser {
       match("}");
     }
 
-    writer.writeClosingNonTerminalTag("ifStatement");
+    visitor.visitNonTerminalEndElement("ifStatement");
   }
 
   private void parseWhileStatement() {
-    writer.writeOpeningNonTerminalTag("whileStatement");
+    visitor.visitNonTerminalBeginElement("whileStatement");
     match("while");
     match("(");
     parseExpression();
@@ -269,15 +271,15 @@ public class JackParser {
     match("{");
     parseStatements();
     match("}");
-    writer.writeClosingNonTerminalTag("whileStatement");
+    visitor.visitNonTerminalEndElement("whileStatement");
   }
 
   private void parseDoStatement() {
-    writer.writeOpeningNonTerminalTag("doStatement");
+    visitor.visitNonTerminalBeginElement("doStatement");
     match("do");
     parseSubroutineCall();
     match(";");
-    writer.writeClosingNonTerminalTag("doStatement");
+    visitor.visitNonTerminalEndElement("doStatement");
   }
 
   private void parseSubroutineCall() {
@@ -301,8 +303,7 @@ public class JackParser {
   }
 
   private boolean isClassNameToken(JackToken token) {
-    // TODO: consult symbol table during code generation.
-    return false;
+    return context.isPresent() && context.get().isClassNameToken(token);
   }
 
   private void parseReturnStatement() {
