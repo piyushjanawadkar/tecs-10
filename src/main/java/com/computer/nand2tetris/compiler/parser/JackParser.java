@@ -33,7 +33,9 @@ public class JackParser {
       );
 
   private LookAheadStream<JackToken> tokens;
+
   private JackElementVisitor visitor;
+  private Optional<Context> context;
   private ImmutableMap<String, Runnable> statementParserByLookahead =
       ImmutableMap.of(
           "let", this::parseLetStatement,
@@ -41,7 +43,6 @@ public class JackParser {
           "while", this::parseWhileStatement,
           "do", this::parseDoStatement,
           "return", this::parseReturnStatement);
-  private Optional<Context> context;
 
   public void parse(
       ImmutableList<JackToken> tokenList,
@@ -71,9 +72,7 @@ public class JackParser {
 
   private void match(
       ImmutableSet<String> tokenTexts) {
-    Preconditions.checkArgument(
-        !tokens.isEmpty(),
-        "No further tokens. Expected %s.", tokenTexts);
+    expect(tokenTexts.toString());
     JackToken token = tokens.extract().get();
     Preconditions.checkArgument(
         tokenTexts.contains(token.tokenText()),
@@ -82,17 +81,18 @@ public class JackParser {
   }
 
   private void parseClassName() {
+    expect("class name");
     parseIdentifier();
   }
 
   private void parseClassVarDecs() {
-    while (!tokens.isEmpty()
-        && CLASS_VAR_DEC_LOOKAHEAD_TOKENS.contains(getPeekedToken().tokenText())) {
+    while(hasLookaheadTextIn(CLASS_VAR_DEC_LOOKAHEAD_TOKENS)) {
       parseClassVarDec();
     }
   }
 
   private void parseClassVarDec() {
+    expect("class variable declarations");
     visitor.visitNonTerminalBeginElement("classVarDec");
     match(CLASS_VAR_DEC_LOOKAHEAD_TOKENS);
     parseType();
@@ -106,7 +106,7 @@ public class JackParser {
   }
 
   private void parseSubroutineDecs() {
-    while (SUBROUTINE_DEC_LOOK_AHEAD_TOKENS.contains(getPeekedToken().tokenText())) {
+    while (hasLookaheadTextIn(SUBROUTINE_DEC_LOOK_AHEAD_TOKENS)) {
       parseSubroutineDec();
     }
   }
@@ -124,6 +124,7 @@ public class JackParser {
   }
 
   private void parseSubroutineReturnType() {
+    expect("subroutine return type");
     if (hasTypeLookaheadToken()) {
       parseType();
     } else {
@@ -132,6 +133,7 @@ public class JackParser {
   }
 
   private void parseSubroutineName() {
+    expect("subroutine name");
     parseIdentifier();
   }
 
@@ -147,6 +149,7 @@ public class JackParser {
   }
 
   private void parseSubroutineBody() {
+    expect("subroutine body");
     match("{");
     parseVarDecs();
     parseStatements();
@@ -160,6 +163,7 @@ public class JackParser {
   }
 
   private void parseVarDec() {
+    expect("variable declaration");
     match("var");
     parseType();
     parseVarName();
@@ -193,23 +197,21 @@ public class JackParser {
   }
 
   private Optional<Runnable> getStatementParser() {
-    Preconditions.checkArgument(!tokens.isEmpty(), "No more tokens. Statement expected.");
-    Runnable parser = statementParserByLookahead.get(getPeekedToken().tokenText());
+    Runnable parser = statementParserByLookahead.get(getPeekedToken("statement").tokenText());
     return parser != null ? Optional.of(parser) : Optional.absent();
   }
 
   private boolean hasStatementLookaheadToken() {
     return !tokens.isEmpty()
-        && statementParserByLookahead.keySet().contains(getPeekedToken().tokenText());
+        && statementParserByLookahead.keySet().contains(getPeekedToken("statement").tokenText());
   }
 
   private void parseIdentifier() {
+    expect("identifier");
     visitor.visitTerminal(extractIdentifier());
   }
 
   private JackToken extractIdentifier() {
-    Preconditions
-        .checkArgument(!tokens.isEmpty(), "No further tokens. Expected identifier.");
     JackToken token = tokens.extract().get();
     Preconditions.checkArgument(
         token.tokenType().equals(TokenType.IDENTIFIER),
@@ -218,7 +220,8 @@ public class JackParser {
   }
 
   private void parseType() {
-    if (getPeekedToken().tokenType().equals(TokenType.IDENTIFIER)) {
+    expect("type");
+    if (hasLookaheadType(TokenType.IDENTIFIER)) {
       parseIdentifier();
     } else {
       match(PRIMITIVE_TYPE_TOKENS);
@@ -226,10 +229,11 @@ public class JackParser {
   }
 
   private void parseLetStatement() {
+    expect("let statement");
     visitor.visitNonTerminalBeginElement("letStatement");
     match("let");
     parseVarName();
-    if (getPeekedToken().tokenText().equals("[")) {
+    if (getPeekedToken("array open").tokenText().equals("[")) {
       match("[");
       parseExpression();
       match("]");
@@ -241,6 +245,7 @@ public class JackParser {
   }
 
   private void parseIfStatement() {
+    expect("if statement");
     visitor.visitNonTerminalBeginElement("ifStatement");
 
     match("if");
@@ -252,7 +257,7 @@ public class JackParser {
     parseStatements();
     match("}");
 
-    if (getPeekedToken().tokenText().equals("else")) {
+    if (getPeekedToken("else").tokenText().equals("else")) {
       match("else");
       match("{");
       parseStatements();
@@ -263,6 +268,7 @@ public class JackParser {
   }
 
   private void parseWhileStatement() {
+    expect("while statement");
     visitor.visitNonTerminalBeginElement("whileStatement");
     match("while");
     match("(");
@@ -275,6 +281,7 @@ public class JackParser {
   }
 
   private void parseDoStatement() {
+    expect("do statement");
     visitor.visitNonTerminalBeginElement("doStatement");
     match("do");
     parseSubroutineCall();
@@ -283,11 +290,11 @@ public class JackParser {
   }
 
   private void parseSubroutineCall() {
-    Preconditions.checkArgument(!tokens.isEmpty(), "No more tokens. Expected subroutine call.");
+    expect("subroutine call");
     JackToken token = tokens.extract().get();
-    if (getPeekedToken().tokenText().equals(".")) {
+    if (hasLookaheadText(".")) {
       tokens.putBack(token);
-      if (isClassNameToken(token)) {
+      if (hasClassNameLookahead()) {
         parseClassName();
       } else {
         parseIdentifier();
@@ -302,14 +309,13 @@ public class JackParser {
     match(")");
   }
 
-  private boolean isClassNameToken(JackToken token) {
-    return context.isPresent() && context.get().isClassNameToken(token);
-  }
-
   private void parseReturnStatement() {
+    expect("return statement");
+    visitor.visitNonTerminalBeginElement("returnStatement");
     match("return");
-    // parseExpression();
+    parseExpression();
     match(";");
+    visitor.visitNonTerminalEndElement("returnStatement");
   }
 
   private void parseExpressionList() {
@@ -320,32 +326,46 @@ public class JackParser {
     match("0");
   }
 
-  private boolean hasTypeLookaheadToken() {
-    return hasLookaheadText(PRIMITIVE_TYPE_TOKENS) || hasLookaheadType(TokenType.IDENTIFIER);
-  }
-
   private void parseTypedVarName() {
+    expect("typed followed by variable name");
     parseType();
     parseVarName();
   }
 
   private void parseVarName() {
+    expect("variable name");
     parseIdentifier();
   }
 
-  private boolean hasLookaheadText(ImmutableSet<String> expectedTokenTexts) {
-    return expectedTokenTexts.contains(getPeekedToken().tokenText());
+  private boolean hasTypeLookaheadToken() {
+    return hasLookaheadTextIn(PRIMITIVE_TYPE_TOKENS) || hasLookaheadType(TokenType.IDENTIFIER);
+  }
+
+  private boolean hasLookaheadTextIn(ImmutableSet<String> expectedTokenTexts) {
+    return !tokens.isEmpty() && expectedTokenTexts
+        .contains(getPeekedToken(expectedTokenTexts.toString()).tokenText());
   }
 
   private boolean hasLookaheadText(String expectedText) {
-    return hasLookaheadText(ImmutableSet.of(expectedText));
+    return hasLookaheadTextIn(ImmutableSet.of(expectedText));
   }
 
   private boolean hasLookaheadType(TokenType tokenType) {
-    return getPeekedToken().tokenType().equals(tokenType);
+    return !tokens.isEmpty() && getPeekedToken(tokenType.toString()).tokenType().equals(tokenType);
   }
 
-  private JackToken getPeekedToken() {
+  private boolean hasClassNameLookahead() {
+    return !tokens.isEmpty() && context.isPresent() && context.get()
+        .isClassNameToken(getPeekedToken("class name"));
+  }
+
+  private JackToken getPeekedToken(String expectedTokenDescription) {
+    expect(expectedTokenDescription);
     return tokens.peek().get();
+  }
+
+  private void expect(String tokenDescription) {
+    Preconditions
+        .checkArgument(!tokens.isEmpty(), "No further tokens. Expected %s", tokenDescription);
   }
 }

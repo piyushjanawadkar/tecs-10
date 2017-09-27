@@ -9,10 +9,8 @@ public class CompiledXmlWriter implements JackElementVisitor {
 
   private final BufferedWriter writer;
   private StringBuilder indentation = new StringBuilder();
-  private Context context;
 
   CompiledXmlWriter(BufferedWriter writer) {
-    this.context = context;
     this.writer = writer;
   }
 
