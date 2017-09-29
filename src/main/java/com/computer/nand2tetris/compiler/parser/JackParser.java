@@ -31,11 +31,30 @@ public class JackParser {
           "function",
           "method"
       );
+  private static final ImmutableSet<String> KEYWORD_CONSTANT_TOKENS =
+      ImmutableSet.of(
+          "true",
+          "false",
+          "null",
+          "this"
+      );
+  private static final ImmutableSet<String> UNARY_OP_TOKENS =
+      ImmutableSet.of(
+          "-",
+          "~"
+      );
+  private static final ImmutableSet<String> BINARY_OP_TOKENS =
+      ImmutableSet.of(
+          "+", "-", "*", "/",
+          "<", ">", "=",
+          "&", ","
+      );
 
   private LookAheadStream<JackToken> tokens;
 
   private JackElementVisitor visitor;
   private Optional<Context> context;
+
   private ImmutableMap<String, Runnable> statementParserByLookahead =
       ImmutableMap.of(
           "let", this::parseLetStatement,
@@ -43,6 +62,50 @@ public class JackParser {
           "while", this::parseWhileStatement,
           "do", this::parseDoStatement,
           "return", this::parseReturnStatement);
+
+  private ImmutableList<TermParser> TERM_PARSERS = ImmutableList.of(
+      TermParser.of(() -> hasLookaheadType(TokenType.INTEGER_CONSTANT), this::parseIntegerConstant),
+      TermParser.of(() -> hasLookaheadType(TokenType.STRING_CONSTANT), this::parseStringConstant),
+      TermParser.of(() -> hasLookaheadTextIn(KEYWORD_CONSTANT_TOKENS), this::parseKeywordConstant),
+      TermParser.of(() -> hasLookaheadText("("), this::parseExpression),
+      TermParser.of(() -> hasLookaheadTextIn(UNARY_OP_TOKENS), this::parseTermWithPrecedingUnaryop),
+      TermParser.of(() -> hasLookaheadType(TokenType.IDENTIFIER),
+          this::parseVariableOrArrayOrSubroutineCall)
+  );
+
+  private void parseVariableOrArrayOrSubroutineCall() {
+    JackToken token = tokens.extract().get();
+    if (hasLookaheadText("[")) {
+      tokens.putBack(token);
+      parseArrayExpression();
+      return;
+    }
+
+    if (hasLookaheadTextIn(ImmutableSet.of("(", "."))) {
+      tokens.putBack(token);
+      parseSubroutineCall();
+      return;
+    }
+
+    tokens.putBack(token);
+    parseVarName();
+  }
+
+  private void parseArrayExpression() {
+    expectAndVisitNonTerminal("arrayExpression", "array expression");
+    parseVarName();
+    match("[");
+    parseExpression();
+    match("]");
+    endNonTerminalVisit();
+  }
+
+  private void parseTermWithPrecedingUnaryop() {
+    expectAndVisitNonTerminal("term");
+    matchOneOf(UNARY_OP_TOKENS);
+    parseTerm();
+    endNonTerminalVisit();
+  }
 
   public void parse(
       ImmutableList<JackToken> tokenList,
@@ -56,21 +119,21 @@ public class JackParser {
   }
 
   private void parseClass() {
-    visitor.visitNonTerminalBeginElement("class");
+    expectAndVisitNonTerminal("class", "keyword class");
     match("class");
     parseClassName();
     match("{");
     parseClassVarDecs();
     parseSubroutineDecs();
     match("}");
-    visitor.visitNonTerminalEndElement("class");
+    endNonTerminalVisit();
   }
 
   private void match(String tokenText) {
-    match(ImmutableSet.of(tokenText));
+    matchOneOf(ImmutableSet.of(tokenText));
   }
 
-  private void match(
+  private void matchOneOf(
       ImmutableSet<String> tokenTexts) {
     expect(tokenTexts.toString());
     JackToken token = tokens.extract().get();
@@ -81,20 +144,20 @@ public class JackParser {
   }
 
   private void parseClassName() {
-    expect("class name");
+    expectAndVisitNonTerminal("className", "class name");
     parseIdentifier();
+    endNonTerminalVisit();
   }
 
   private void parseClassVarDecs() {
-    while(hasLookaheadTextIn(CLASS_VAR_DEC_LOOKAHEAD_TOKENS)) {
+    while (hasLookaheadTextIn(CLASS_VAR_DEC_LOOKAHEAD_TOKENS)) {
       parseClassVarDec();
     }
   }
 
   private void parseClassVarDec() {
-    expect("class variable declarations");
-    visitor.visitNonTerminalBeginElement("classVarDec");
-    match(CLASS_VAR_DEC_LOOKAHEAD_TOKENS);
+    expectAndVisitNonTerminal("classVarDec", "class variable declarations");
+    matchOneOf(CLASS_VAR_DEC_LOOKAHEAD_TOKENS);
     parseType();
     parseVarName();
     while (hasLookaheadText(",")) {
@@ -102,7 +165,7 @@ public class JackParser {
       parseVarName();
     }
     match(";");
-    visitor.visitNonTerminalEndElement("classVarDec");
+    endNonTerminalVisit();
   }
 
   private void parseSubroutineDecs() {
@@ -112,48 +175,53 @@ public class JackParser {
   }
 
   private void parseSubroutineDec() {
-    visitor.visitNonTerminalBeginElement("subroutineDec");
-    match(SUBROUTINE_DEC_LOOK_AHEAD_TOKENS);
+    expectAndVisitNonTerminal("subroutineDec", "subroutine declaration");
+    matchOneOf(SUBROUTINE_DEC_LOOK_AHEAD_TOKENS);
     parseSubroutineReturnType();
     parseSubroutineName();
     match("(");
     parseSubroutineParameterList();
     match(")");
     parseSubroutineBody();
-    visitor.visitNonTerminalEndElement("subroutineDec");
+    endNonTerminalVisit();
   }
 
   private void parseSubroutineReturnType() {
-    expect("subroutine return type");
+    expectAndVisitNonTerminal("subroutineReturnType", "subroutine return type");
     if (hasTypeLookaheadToken()) {
       parseType();
     } else {
       match("void");
     }
+    endNonTerminalVisit();
   }
 
   private void parseSubroutineName() {
-    expect("subroutine name");
+    expectAndVisitNonTerminal("subroutineName", "subroutine name");
     parseIdentifier();
+    endNonTerminalVisit();
   }
 
   private void parseSubroutineParameterList() {
     if (!hasTypeLookaheadToken()) {
       return;
     }
+    expectAndVisitNonTerminal("parameterList", "subroutine parameter list");
     parseTypedVarName();
     while (hasLookaheadText(",")) {
       match(",");
       parseTypedVarName();
     }
+    endNonTerminalVisit();
   }
 
   private void parseSubroutineBody() {
-    expect("subroutine body");
+    expectAndVisitNonTerminal("subroutineBody", "subroutine body");
     match("{");
     parseVarDecs();
     parseStatements();
     match("}");
+    endNonTerminalVisit();
   }
 
   private void parseVarDecs() {
@@ -163,7 +231,7 @@ public class JackParser {
   }
 
   private void parseVarDec() {
-    expect("variable declaration");
+    expectAndVisitNonTerminal("varDec", "variable declaration");
     match("var");
     parseType();
     parseVarName();
@@ -172,28 +240,31 @@ public class JackParser {
       parseVarName();
     }
     match(";");
+    endNonTerminalVisit();
   }
 
   private void parseStatements() {
-    boolean shouldWriteNonTerminalTag = false;
+    boolean isFirstStatementVisited = false;
     while (hasStatementLookaheadToken()) {
-      if (!shouldWriteNonTerminalTag) {
-        shouldWriteNonTerminalTag = true;
-        visitor.visitNonTerminalBeginElement("statements");
+      if (!isFirstStatementVisited) {
+        isFirstStatementVisited = true;
+        expectAndVisitNonTerminal("statements", "list of statements");
       }
       parseStatement();
     }
-    if (shouldWriteNonTerminalTag) {
-      visitor.visitNonTerminalEndElement("statements");
+    if (isFirstStatementVisited) {
+      endNonTerminalVisit();
     }
   }
 
   private void parseStatement() {
+    expectAndVisitNonTerminal("statement");
     Optional<Runnable> statementParser = getStatementParser();
     Preconditions.checkArgument(
         statementParser.isPresent(),
         "No parser found for statement beginning at %s", tokens);
     statementParser.get().run();
+    endNonTerminalVisit();
   }
 
   private Optional<Runnable> getStatementParser() {
@@ -206,31 +277,18 @@ public class JackParser {
         && statementParserByLookahead.keySet().contains(getPeekedToken("statement").tokenText());
   }
 
-  private void parseIdentifier() {
-    expect("identifier");
-    visitor.visitTerminal(extractIdentifier());
-  }
-
-  private JackToken extractIdentifier() {
-    JackToken token = tokens.extract().get();
-    Preconditions.checkArgument(
-        token.tokenType().equals(TokenType.IDENTIFIER),
-        "Expected %s but found %s.", TokenType.IDENTIFIER, token.toString());
-    return token;
-  }
-
   private void parseType() {
-    expect("type");
+    expectAndVisitNonTerminal("type");
     if (hasLookaheadType(TokenType.IDENTIFIER)) {
       parseIdentifier();
     } else {
-      match(PRIMITIVE_TYPE_TOKENS);
+      matchOneOf(PRIMITIVE_TYPE_TOKENS);
     }
+    endNonTerminalVisit();
   }
 
   private void parseLetStatement() {
-    expect("let statement");
-    visitor.visitNonTerminalBeginElement("letStatement");
+    expectAndVisitNonTerminal("letStatement", "let statement");
     match("let");
     parseVarName();
     if (getPeekedToken("array open").tokenText().equals("[")) {
@@ -241,12 +299,11 @@ public class JackParser {
     match("=");
     parseExpression();
     match(";");
-    visitor.visitNonTerminalEndElement("letStatement");
+    endNonTerminalVisit();
   }
 
   private void parseIfStatement() {
-    expect("if statement");
-    visitor.visitNonTerminalBeginElement("ifStatement");
+    expectAndVisitNonTerminal("ifStatement", "if statement");
 
     match("if");
     match("(");
@@ -264,12 +321,11 @@ public class JackParser {
       match("}");
     }
 
-    visitor.visitNonTerminalEndElement("ifStatement");
+    endNonTerminalVisit();
   }
 
   private void parseWhileStatement() {
-    expect("while statement");
-    visitor.visitNonTerminalBeginElement("whileStatement");
+    expectAndVisitNonTerminal("whileStatement", "while statement");
     match("while");
     match("(");
     parseExpression();
@@ -277,20 +333,19 @@ public class JackParser {
     match("{");
     parseStatements();
     match("}");
-    visitor.visitNonTerminalEndElement("whileStatement");
+    endNonTerminalVisit();
   }
 
   private void parseDoStatement() {
-    expect("do statement");
-    visitor.visitNonTerminalBeginElement("doStatement");
+    expectAndVisitNonTerminal("doStatement", "do statement");
     match("do");
     parseSubroutineCall();
     match(";");
-    visitor.visitNonTerminalEndElement("doStatement");
+    endNonTerminalVisit();
   }
 
   private void parseSubroutineCall() {
-    expect("subroutine call");
+    expectAndVisitNonTerminal("subroutineCall", "subroutine call");
     JackToken token = tokens.extract().get();
     if (hasLookaheadText(".")) {
       tokens.putBack(token);
@@ -307,34 +362,122 @@ public class JackParser {
     match("(");
     parseExpressionList();
     match(")");
+    endNonTerminalVisit();
   }
 
   private void parseReturnStatement() {
-    expect("return statement");
-    visitor.visitNonTerminalBeginElement("returnStatement");
+    expectAndVisitNonTerminal("returnStatement", "return statement");
     match("return");
-    parseExpression();
+    if (!hasLookaheadText(";")) {
+      parseExpression();
+    }
     match(";");
-    visitor.visitNonTerminalEndElement("returnStatement");
+    endNonTerminalVisit();
   }
 
   private void parseExpressionList() {
+    if (!hasExpressionLookaheadToken()) {
+      return;
+    }
+
+    expectAndVisitNonTerminal("expressionList", "list of expressions");
+    parseExpression();
+    while (hasLookaheadText(",")) {
+      match(",");
+      parseExpression();
+    }
+    endNonTerminalVisit();
   }
 
   private void parseExpression() {
-    // TODO
-    match("0");
+    expectAndVisitNonTerminal("expression");
+    parseTerm();
+    while (hasLookaheadTextIn(BINARY_OP_TOKENS)) {
+      matchOneOf(BINARY_OP_TOKENS);
+      parseTerm();
+    }
+    endNonTerminalVisit();
+  }
+
+  private void parseTerm() {
+    expectAndVisitNonTerminal("term");
+    Runnable parser = getTermParser();
+    parser.run();
+    endNonTerminalVisit();
+  }
+
+  private Runnable getTermParser() {
+    Optional<TermParser> termParser = findMatchingTermParser();
+    Preconditions.checkArgument(termParser.isPresent(), "No parser found for %s.", tokens);
+    return termParser.get().parser();
+  }
+
+  private Optional<TermParser> findMatchingTermParser() {
+    return Optional.fromJavaUtil(
+        TERM_PARSERS
+            .stream()
+            .filter(p -> {
+              try {
+                return p.matcher().call();
+              } catch (Exception e) {
+                throw new RuntimeException(e);
+              }
+            })
+            .findFirst());
   }
 
   private void parseTypedVarName() {
-    expect("typed followed by variable name");
+    expectAndVisitNonTerminal("typedVarName", "type followed by variable name");
     parseType();
     parseVarName();
+    endNonTerminalVisit();
   }
 
   private void parseVarName() {
-    expect("variable name");
+    expectAndVisitNonTerminal("varName", "variable name");
     parseIdentifier();
+    endNonTerminalVisit();
+  }
+
+  private void parseKeywordConstant() {
+    expect(KEYWORD_CONSTANT_TOKENS.toString());
+    JackToken token = extractToken(TokenType.KEYWORD);
+    Preconditions.checkArgument(KEYWORD_CONSTANT_TOKENS.contains(token.tokenText()));
+    visitor.visitTerminal(token);
+  }
+
+  private void parseStringConstant() {
+    parseToken("string constant", TokenType.STRING_CONSTANT);
+  }
+
+  private void parseIdentifier() {
+    parseToken("identifier", TokenType.IDENTIFIER);
+  }
+
+  private JackToken extractToken(TokenType tokenType) {
+    expect(tokenType.toString());
+    JackToken token = tokens.extract().get();
+    Preconditions.checkArgument(
+        token.tokenType().equals(tokenType),
+        "Expected %s but found %s.", tokenType, token.toString());
+    return token;
+  }
+
+  private void parseIntegerConstant() {
+    parseToken("integer constant", TokenType.INTEGER_CONSTANT);
+  }
+
+  private void parseToken(String tokenDescription, TokenType tokenType) {
+    expect(tokenDescription);
+    visitor.visitTerminal(extractToken(tokenType));
+  }
+
+  private boolean hasExpressionLookaheadToken() {
+    return hasTermLookaheadToken();
+  }
+
+  private boolean hasTermLookaheadToken() {
+    return findMatchingTermParser().isPresent();
   }
 
   private boolean hasTypeLookaheadToken() {
@@ -367,5 +510,18 @@ public class JackParser {
   private void expect(String tokenDescription) {
     Preconditions
         .checkArgument(!tokens.isEmpty(), "No further tokens. Expected %s", tokenDescription);
+  }
+
+  private void expectAndVisitNonTerminal(String nonTerminalText, String nonTerminalDesc) {
+    expect(nonTerminalDesc);
+    visitor.beginNonTerminalVisit(nonTerminalText);
+  }
+
+  private void expectAndVisitNonTerminal(String nonTerminalText) {
+    expectAndVisitNonTerminal(nonTerminalText, nonTerminalText);
+  }
+
+  private void endNonTerminalVisit() {
+    visitor.endNonTerminalVisit();
   }
 }

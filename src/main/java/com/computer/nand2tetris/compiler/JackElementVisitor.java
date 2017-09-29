@@ -2,9 +2,9 @@ package com.computer.nand2tetris.compiler;
 
 public interface JackElementVisitor {
 
-  void visitNonTerminalBeginElement(String nonTerminalText);
+  void beginNonTerminalVisit(String nonTerminalText);
 
-  void visitNonTerminalEndElement(String nonTerminalText);
+  void endNonTerminalVisit();
 
   void visitTerminal(JackToken token);
 }

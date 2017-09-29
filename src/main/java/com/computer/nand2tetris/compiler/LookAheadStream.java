@@ -21,6 +21,7 @@ public final class LookAheadStream<T> {
   public Optional<T> extract() {
     Optional<T> extractedLookAhead = peek();
     resetStateFromList(restItems);
+    System.err.println(restItems);
     return extractedLookAhead;
   }
 

@@ -2,22 +2,23 @@ package com.computer.nand2tetris.compiler;
 
 import com.computer.nand2tetris.compiler.JackToken.TokenType;
 import com.google.common.base.Optional;
+import java.util.Set;
 import java.util.TreeSet;
 
-public class Context implements JackElementVisitor {
+public class Context extends StackBasedJackElementVisitor {
 
-  private TreeSet<String> classNames = new TreeSet<>();
+  private Set<String> classNames = new TreeSet<>();
 
   boolean inClassNonTerminal = false;
   Optional<String> currentClassName = Optional.absent();
 
   @Override
-  public void visitNonTerminalBeginElement(String nonTerminalText) {
+  protected void beginVisitForNonTerminal(String nonTerminalText) {
     inClassNonTerminal = nonTerminalText.equals("class");
   }
 
   @Override
-  public void visitNonTerminalEndElement(String nonTerminalText) {
+  protected void endVisitForNonTerminal(String nonTerminalText) {
     if (inClassNonTerminal && nonTerminalText.equals("class")) {
       inClassNonTerminal = false;
     }

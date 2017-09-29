@@ -1,31 +1,58 @@
 package com.computer.nand2tetris.compiler;
 
+import com.google.common.collect.ImmutableSet;
 import java.io.BufferedWriter;
 import java.io.IOException;
+import java.util.Stack;
 
-public class CompiledXmlWriter implements JackElementVisitor {
+public class CompiledXmlWriter extends StackBasedJackElementVisitor {
 
   private static final String INDENTATION_UNIT = "  ";  // 2 spaces
 
   private final BufferedWriter writer;
   private StringBuilder indentation = new StringBuilder();
 
+  ImmutableSet<String> NON_TERMINALS_TO_WRITE =
+      ImmutableSet.of(
+          // program structure
+          "class",
+          "classVarDec",
+          "subroutineDec",
+          "parameterList",
+          "subroutineBody",
+          "varDec",
+          // statements
+          "statements",
+          "whileSatement",
+          "ifStatement",
+          "returnStatement",
+          "letStatement",
+          "doStatement",
+          // expressions
+          "expression",
+          "term",
+          "expressionList");
+
   CompiledXmlWriter(BufferedWriter writer) {
     this.writer = writer;
   }
 
   @Override
-  public void visitNonTerminalBeginElement(String nonTerminalText) {
-    indentAndWrite(createTag(nonTerminalText));
-    increaseIndentation();
-    writeNewline();
+  protected void beginVisitForNonTerminal(String nonTerminalText) {
+    if (NON_TERMINALS_TO_WRITE.contains(nonTerminalText)) {
+      indentAndWrite(createTag(nonTerminalText));
+      increaseIndentation();
+      writeNewline();
+    }
   }
 
   @Override
-  public void visitNonTerminalEndElement(String nonTerminalText) {
-    decreaseIndentation();
-    indentAndWrite(createClosingTag(nonTerminalText));
-    writeNewline();
+  protected void endVisitForNonTerminal(String nonTerminalText) {
+    if (NON_TERMINALS_TO_WRITE.contains(nonTerminalText)) {
+      decreaseIndentation();
+      indentAndWrite(createClosingTag(nonTerminalText));
+      writeNewline();
+    }
   }
 
   @Override
@@ -72,6 +99,7 @@ public class CompiledXmlWriter implements JackElementVisitor {
   private void writeNewline() {
     try {
       writer.newLine();
+      writer.flush();
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
