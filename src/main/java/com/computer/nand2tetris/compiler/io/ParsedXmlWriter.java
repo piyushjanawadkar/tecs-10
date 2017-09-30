@@ -1,11 +1,12 @@
-package com.computer.nand2tetris.compiler;
+package com.computer.nand2tetris.compiler.io;
 
+import com.computer.nand2tetris.compiler.JackToken;
+import com.computer.nand2tetris.compiler.StackBasedJackElementVisitor;
 import com.google.common.collect.ImmutableSet;
 import java.io.BufferedWriter;
 import java.io.IOException;
-import java.util.Stack;
 
-public class CompiledXmlWriter extends StackBasedJackElementVisitor {
+public class ParsedXmlWriter extends StackBasedJackElementVisitor {
 
   private static final String INDENTATION_UNIT = "  ";  // 2 spaces
 
@@ -33,7 +34,7 @@ public class CompiledXmlWriter extends StackBasedJackElementVisitor {
           "term",
           "expressionList");
 
-  CompiledXmlWriter(BufferedWriter writer) {
+  public ParsedXmlWriter(BufferedWriter writer) {
     this.writer = writer;
   }
 
