@@ -9,14 +9,12 @@ import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class IOPathsCreator {
 
   private static final String PARSER_OUTPUT_XML_SUFFIX = ".xml";
   private static final String TOKENIZER_OUTPUT_XML_SUFFIX = "T.xml";
-  private static final Pattern JACK_FILE_EXTENSION_PATTERN = Pattern.compile("[.]jack$");
+  private static final String JACK_FILE_EXTENSION = ".jack";
   private static final String OUTPUT_SUBDIR = "parseroutput";
 
   public static ImmutableList<IOPaths> createPaths(String[] args) {
@@ -45,7 +43,7 @@ public class IOPathsCreator {
 
 
   private static boolean hasJackExtension(String path) {
-    return JACK_FILE_EXTENSION_PATTERN.matcher(path).find();
+    return path.endsWith(JACK_FILE_EXTENSION);
   }
 
   private static IOPaths createPathsFromFile(File inputFile) {
@@ -80,11 +78,10 @@ public class IOPathsCreator {
   }
 
   private static String replaceSuffix(Path fileName, String parserOutputXmlSuffix) {
-    StringBuffer sb = new StringBuffer();
-    Matcher matcher = JACK_FILE_EXTENSION_PATTERN.matcher(fileName.toString());
-    Preconditions.checkArgument(matcher.find(), "Expected .jack suffix in %s", fileName);
-    matcher.appendReplacement(sb, parserOutputXmlSuffix);
-    return sb.toString();
+    String stringFileName = fileName.toString();
+    Preconditions.checkArgument(hasJackExtension(stringFileName));
+    return fileName.toString().substring(0, stringFileName.length() - JACK_FILE_EXTENSION.length())
+        + parserOutputXmlSuffix;
   }
 
   private static String extractInputLocation(String[] args) {

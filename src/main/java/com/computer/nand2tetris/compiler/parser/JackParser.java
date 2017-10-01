@@ -50,6 +50,27 @@ public class JackParser {
           "&", ","
       );
 
+  public static ImmutableSet<String> NON_TERMINALS_TO_PARSE =
+      ImmutableSet.of(
+          // program structure
+          "class",
+          "classVarDec",
+          "subroutineDec",
+          "parameterList",
+          "subroutineBody",
+          "varDec",
+          // statements
+          "statements",
+          "whileSatement",
+          "ifStatement",
+          "returnStatement",
+          "letStatement",
+          "doStatement",
+          // expressions
+          "expression",
+          "term",
+          "expressionList");
+
   private LookAheadStream<JackToken> tokens;
 
   private JackElementVisitor visitor;

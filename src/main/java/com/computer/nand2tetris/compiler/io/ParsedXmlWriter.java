@@ -12,35 +12,16 @@ public class ParsedXmlWriter extends StackBasedJackElementVisitor {
 
   private final BufferedWriter writer;
   private StringBuilder indentation = new StringBuilder();
+  private final ImmutableSet<String> nonTerminalsToParse;
 
-  ImmutableSet<String> NON_TERMINALS_TO_WRITE =
-      ImmutableSet.of(
-          // program structure
-          "class",
-          "classVarDec",
-          "subroutineDec",
-          "parameterList",
-          "subroutineBody",
-          "varDec",
-          // statements
-          "statements",
-          "whileSatement",
-          "ifStatement",
-          "returnStatement",
-          "letStatement",
-          "doStatement",
-          // expressions
-          "expression",
-          "term",
-          "expressionList");
-
-  public ParsedXmlWriter(BufferedWriter writer) {
+  public ParsedXmlWriter(BufferedWriter writer, ImmutableSet<String> nonTerminalsToParse) {
     this.writer = writer;
+    this.nonTerminalsToParse = nonTerminalsToParse;
   }
 
   @Override
   protected void beginVisitForNonTerminal(String nonTerminalText) {
-    if (NON_TERMINALS_TO_WRITE.contains(nonTerminalText)) {
+    if (nonTerminalsToParse.contains(nonTerminalText)) {
       indentAndWrite(createTag(nonTerminalText));
       increaseIndentation();
       writeNewline();
@@ -49,7 +30,7 @@ public class ParsedXmlWriter extends StackBasedJackElementVisitor {
 
   @Override
   protected void endVisitForNonTerminal(String nonTerminalText) {
-    if (NON_TERMINALS_TO_WRITE.contains(nonTerminalText)) {
+    if (nonTerminalsToParse.contains(nonTerminalText)) {
       decreaseIndentation();
       indentAndWrite(createClosingTag(nonTerminalText));
       writeNewline();
