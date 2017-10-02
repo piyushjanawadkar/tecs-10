@@ -2,6 +2,7 @@ package com.computer.nand2tetris.compiler.io;
 
 import com.computer.nand2tetris.compiler.JackToken;
 import com.computer.nand2tetris.compiler.StackBasedJackElementVisitor;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -9,14 +10,34 @@ import java.io.IOException;
 public class ParsedXmlWriter extends StackBasedJackElementVisitor {
 
   private static final String INDENTATION_UNIT = "  ";  // 2 spaces
+  private static final ImmutableMap<String, String> BROWSABLE_STRINGS =
+      ImmutableMap.of(
+          "<", "&lt;",
+          ">", "&gt;",
+          "\"", "&quot;",
+          "&", "&amp;");
 
   private final BufferedWriter writer;
-  private StringBuilder indentation = new StringBuilder();
   private final ImmutableSet<String> nonTerminalsToParse;
+  private StringBuilder indentation = new StringBuilder();
 
   public ParsedXmlWriter(BufferedWriter writer, ImmutableSet<String> nonTerminalsToParse) {
     this.writer = writer;
     this.nonTerminalsToParse = nonTerminalsToParse;
+  }
+
+  private static String getTokenText(JackToken token) {
+    String tokenText = token.tokenText();
+    String browsableText = BROWSABLE_STRINGS.get(tokenText);
+    return browsableText == null ? tokenText : browsableText;
+  }
+
+  private static String createTag(String tagText) {
+    return String.format("<%s>", tagText);
+  }
+
+  private static String createClosingTag(String tagText) {
+    return createTag(String.format("/%s", tagText));
   }
 
   @Override
@@ -39,9 +60,10 @@ public class ParsedXmlWriter extends StackBasedJackElementVisitor {
 
   @Override
   public void visitTerminal(JackToken token) {
-    indentAndWrite(createTag(token.tokenType().toString()));
-    write(token.tokenText());
-    write(createClosingTag(token.tokenType().toString()));
+    String tokenTypeText = token.tokenType().toString();
+    indentAndWrite(createTag(tokenTypeText));
+    write(String.format(" %s ", getTokenText(token)));
+    write(createClosingTag(tokenTypeText));
     writeNewline();
   }
 
@@ -60,14 +82,6 @@ public class ParsedXmlWriter extends StackBasedJackElementVisitor {
   private void indentAndWrite(String text) {
     indent();
     write(text);
-  }
-
-  private static String createTag(String tagText) {
-    return String.format("<%s>", tagText);
-  }
-
-  private String createClosingTag(String tagText) {
-    return createTag(String.format("/%s", tagText));
   }
 
   private void write(String text) {

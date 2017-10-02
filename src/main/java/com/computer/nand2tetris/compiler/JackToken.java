@@ -1,5 +1,6 @@
 package com.computer.nand2tetris.compiler;
 
+import com.computer.nand2tetris.compiler.io.CamelCaseConverter;
 import com.google.auto.value.AutoValue;
 
 @AutoValue
@@ -10,7 +11,7 @@ public abstract class JackToken {
 
     @Override
     public String toString() {
-      return name().toLowerCase();
+      return CamelCaseConverter.convert(name().toLowerCase());
     }
   }
 

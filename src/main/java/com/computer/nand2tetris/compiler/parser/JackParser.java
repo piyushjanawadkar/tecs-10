@@ -47,10 +47,10 @@ public class JackParser {
       ImmutableSet.of(
           "+", "-", "*", "/",
           "<", ">", "=",
-          "&", ","
+          "&", "|"
       );
 
-  public static ImmutableSet<String> NON_TERMINALS_TO_PARSE =
+  public static final ImmutableSet<String> NON_TERMINALS_TO_PARSE =
       ImmutableSet.of(
           // program structure
           "class",
@@ -61,7 +61,7 @@ public class JackParser {
           "varDec",
           // statements
           "statements",
-          "whileSatement",
+          "whileStatement",
           "ifStatement",
           "returnStatement",
           "letStatement",
@@ -178,14 +178,13 @@ public class JackParser {
   }
 
   private void parseSubroutineParameterList() {
-    if (!hasTypeLookaheadToken()) {
-      return;
-    }
     expectAndVisitNonTerminal("parameterList", "subroutine parameter list");
-    parseTypedVarName();
-    while (hasLookaheadText(",")) {
-      match(",");
+    if (hasTypeLookaheadToken()) {
       parseTypedVarName();
+      while (hasLookaheadText(",")) {
+        match(",");
+        parseTypedVarName();
+      }
     }
     endNonTerminalVisit();
   }
@@ -343,15 +342,13 @@ public class JackParser {
   // Expressions
 
   private void parseExpressionList() {
-    if (!hasExpressionLookaheadToken()) {
-      return;
-    }
-
     expectAndVisitNonTerminal("expressionList", "list of expressions");
-    parseExpression();
-    while (hasLookaheadText(",")) {
-      match(",");
+    if (hasExpressionLookaheadToken()) {
       parseExpression();
+      while (hasLookaheadText(",")) {
+        match(",");
+        parseExpression();
+      }
     }
     endNonTerminalVisit();
   }
@@ -409,7 +406,7 @@ public class JackParser {
   }
 
   private void parseTermWithPrecedingUnaryop() {
-    expectAndVisitNonTerminal("term");
+    expectAndVisitNonTerminal("termWithPrecedingUnaryOp", "term preceded by a unary operator");
     matchOneOf(UNARY_OP_TOKENS);
     parseTerm();
     endNonTerminalVisit();
