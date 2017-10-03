@@ -49,8 +49,11 @@ final class JackAnalyzer {
   public static void main(String[] args) throws IOException {
     ImmutableList<IOPaths> ioPaths = IOPathsCreator.createPaths(args);
     //System.err.println(ioPaths);
-    JackAnalyzer analyzer = new JackAnalyzer(new JackTokenizer(), new JackParser(),
-        new TokensWriter());
+    JackAnalyzer analyzer =
+        new JackAnalyzer(
+            new JackTokenizer(),
+            new JackParser(),
+            new TokensWriter());
     analyzer.analyze(ioPaths);
   }
 
@@ -86,18 +89,27 @@ final class JackAnalyzer {
 
   private void compile(IOPaths ioPaths, Context context) {
     try {
-      BufferedReader reader = createReader(ioPaths.inputFilePath());
+      ImmutableList<JackToken> tokens = createAndWriteTokens(ioPaths);
       BufferedWriter parserOutputWriter = createWriter(ioPaths.parserOutputPath());
-      ImmutableList<JackToken> tokens = tokenizer.tokenize(reader);
-      tokensWriter.writeTokens(tokens, createWriter(ioPaths.tokenizerOutputPath()));
       parser.parse(
           tokens,
           Optional.of(context),
           new ParsedXmlWriter(parserOutputWriter, JackParser.NON_TERMINALS_TO_PARSE));
-      reader.close();
       parserOutputWriter.close();
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  private ImmutableList<JackToken> createAndWriteTokens(IOPaths ioPaths) throws IOException {
+    BufferedReader reader = createReader(ioPaths.inputFilePath());
+    ImmutableList<JackToken> tokens = tokenizer.tokenize(reader);
+    reader.close();
+
+    BufferedWriter tokenizerOutputWriter = createWriter(ioPaths.tokenizerOutputPath());
+    tokensWriter.writeTokens(tokens, tokenizerOutputWriter);
+    tokenizerOutputWriter.close();
+
+    return tokens;
   }
 }
