@@ -33,23 +33,27 @@ public class JackParser {
           "expression",
           "term",
           "expressionList");
+
   private static final ImmutableSet<String> PRIMITIVE_TYPE_TOKENS =
       ImmutableSet.of(
           "int",
           "char",
           "boolean"
       );
+
   private static final ImmutableSet<String> CLASS_VAR_DEC_LOOKAHEAD_TOKENS =
       ImmutableSet.of(
           "static",
           "field"
       );
+
   private static final ImmutableSet<String> SUBROUTINE_DEC_LOOK_AHEAD_TOKENS =
       ImmutableSet.of(
           "constructor",
           "function",
           "method"
       );
+
   private static final ImmutableSet<String> KEYWORD_CONSTANT_TOKENS =
       ImmutableSet.of(
           "true",
@@ -57,11 +61,13 @@ public class JackParser {
           "null",
           "this"
       );
+
   private static final ImmutableSet<String> UNARY_OP_TOKENS =
       ImmutableSet.of(
           "-",
           "~"
       );
+
   private static final ImmutableSet<String> BINARY_OP_TOKENS =
       ImmutableSet.of(
           "+", "-", "*", "/",
@@ -70,8 +76,11 @@ public class JackParser {
       );
 
   private Optional<Context> context;
+
   private TokensVisitor tokensVisitor;
+
   private LookAheadStream<JackToken> tokens;
+
   private ImmutableMap<String, Runnable> statementParserByLookahead =
       ImmutableMap.of(
           "let", this::parseLetStatement,
@@ -79,13 +88,25 @@ public class JackParser {
           "while", this::parseWhileStatement,
           "do", this::parseDoStatement,
           "return", this::parseReturnStatement);
+
   private ImmutableList<TermParser> TERM_PARSERS = ImmutableList.of(
-      TermParser.of(() -> hasLookaheadType(TokenType.INTEGER_CONSTANT), this::parseIntegerConstant),
-      TermParser.of(() -> hasLookaheadType(TokenType.STRING_CONSTANT), this::parseStringConstant),
-      TermParser.of(() -> hasLookaheadTextIn(KEYWORD_CONSTANT_TOKENS), this::parseKeywordConstant),
-      TermParser.of(() -> hasLookaheadText("("), this::parseParenthesizedExpression),
-      TermParser.of(() -> hasLookaheadTextIn(UNARY_OP_TOKENS), this::parseTermWithPrecedingUnaryop),
-      TermParser.of(() -> hasLookaheadType(TokenType.IDENTIFIER),
+      TermParser.of(
+          () -> hasLookaheadType(TokenType.INTEGER_CONSTANT),
+          this::parseIntegerConstant),
+      TermParser.of(
+          () -> hasLookaheadType(TokenType.STRING_CONSTANT),
+          this::parseStringConstant),
+      TermParser.of(
+          () -> hasLookaheadTextIn(KEYWORD_CONSTANT_TOKENS),
+          this::parseKeywordConstant),
+      TermParser.of(
+          () -> hasLookaheadText("("),
+          this::parseParenthesizedExpression),
+      TermParser.of(
+          () -> hasLookaheadTextIn(UNARY_OP_TOKENS),
+          this::parseTermWithPrecedingUnaryop),
+      TermParser.of(
+          () -> hasLookaheadType(TokenType.IDENTIFIER),
           this::parseVariableOrArrayOrSubroutineCall)
   );
 
@@ -254,7 +275,8 @@ public class JackParser {
   }
 
   private Optional<Runnable> getStatementParser() {
-    Runnable parser = statementParserByLookahead.get(getPeekedToken("statement").tokenText());
+    Runnable parser = statementParserByLookahead
+        .get(getPeekedTokenExpecting("statement").tokenText());
     return parser != null ? Optional.of(parser) : Optional.absent();
   }
 
@@ -291,7 +313,7 @@ public class JackParser {
               parseStatements();
               match("}");
 
-              if (getPeekedToken("else").tokenText().equals("else")) {
+              if (getPeekedTokenExpecting("else").tokenText().equals("else")) {
                 match("else");
                 match("{");
                 parseStatements();
@@ -523,7 +545,10 @@ public class JackParser {
 
   private boolean hasStatementLookaheadToken() {
     return !tokens.isEmpty()
-        && statementParserByLookahead.keySet().contains(getPeekedToken("statement").tokenText());
+        && statementParserByLookahead
+        .keySet()
+        .contains(
+            getPeekedTokenExpecting("statement").tokenText());
   }
 
   private boolean hasExpressionLookaheadToken() {
@@ -535,12 +560,13 @@ public class JackParser {
   }
 
   private boolean hasTypeLookaheadToken() {
-    return hasLookaheadTextIn(PRIMITIVE_TYPE_TOKENS) || hasLookaheadType(TokenType.IDENTIFIER);
+    return hasLookaheadTextIn(PRIMITIVE_TYPE_TOKENS)
+        || hasLookaheadType(TokenType.IDENTIFIER);
   }
 
   private boolean hasLookaheadTextIn(ImmutableSet<String> expectedTokenTexts) {
     return !tokens.isEmpty() && expectedTokenTexts
-        .contains(getPeekedToken(expectedTokenTexts.toString()).tokenText());
+        .contains(getPeekedTokenExpecting(expectedTokenTexts.toString()).tokenText());
   }
 
   private boolean hasLookaheadText(String expectedText) {
@@ -548,12 +574,13 @@ public class JackParser {
   }
 
   private boolean hasLookaheadType(TokenType tokenType) {
-    return !tokens.isEmpty() && getPeekedToken(tokenType.toString()).tokenType().equals(tokenType);
+    return !tokens.isEmpty() && getPeekedTokenExpecting(tokenType.toString()).tokenType()
+        .equals(tokenType);
   }
 
   private boolean hasClassNameLookahead() {
     return !tokens.isEmpty() && context.isPresent() && context.get()
-        .isClassNameToken(getPeekedToken("class name"));
+        .isClassNameToken(getPeekedTokenExpecting("class name"));
   }
 
   private void match(String tokenText) {
@@ -570,7 +597,7 @@ public class JackParser {
     tokensVisitor.visitor().visitTerminal(token);
   }
 
-  private JackToken getPeekedToken(String expectedTokenDescription) {
+  private JackToken getPeekedTokenExpecting(String expectedTokenDescription) {
     tokens.expect(expectedTokenDescription);
     return tokens.peek().get();
   }
