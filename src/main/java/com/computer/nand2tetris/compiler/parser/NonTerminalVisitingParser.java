@@ -3,7 +3,6 @@ package com.computer.nand2tetris.compiler.parser;
 import com.computer.nand2tetris.compiler.JackElementVisitor;
 import com.computer.nand2tetris.compiler.JackToken;
 import com.computer.nand2tetris.compiler.LookAheadStream;
-import com.google.common.base.Preconditions;
 
 final class NonTerminalVisitingParser {
 
@@ -25,13 +24,8 @@ final class NonTerminalVisitingParser {
     return new NonTerminalVisitingParser(tokenText, visitor);
   }
 
-  private static void expect(String tokenDescription, LookAheadStream<JackToken> tokens) {
-    Preconditions
-        .checkArgument(!tokens.isEmpty(), "No further tokens. Expected %s", tokenDescription);
-  }
-
   public void parse(Runnable parser) {
     parser.run();
-    visitor.endNonTerminalVisit();
+    visitor.endNonTerminalVisit(tokenText);
   }
 }

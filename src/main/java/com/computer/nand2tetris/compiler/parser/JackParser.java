@@ -68,11 +68,10 @@ public class JackParser {
           "<", ">", "=",
           "&", "|"
       );
-  private LookAheadStream<JackToken> tokens;
 
-  private JackElementVisitor visitor;
   private Optional<Context> context;
   private TokensVisitor tokensVisitor;
+  private LookAheadStream<JackToken> tokens;
   private ImmutableMap<String, Runnable> statementParserByLookahead =
       ImmutableMap.of(
           "let", this::parseLetStatement,
@@ -94,10 +93,9 @@ public class JackParser {
       ImmutableList<JackToken> tokenList,
       Optional<Context> context,
       JackElementVisitor visitor) {
-    tokens = new LookAheadStream<>(tokenList);
     this.context = context;
-    this.visitor = visitor;
-    this.tokensVisitor = new TokensVisitor(tokens, visitor);
+    this.tokens = new LookAheadStream<>(tokenList);
+    this.tokensVisitor = TokensVisitor.create(tokens, visitor);
     parseClass();
     Preconditions.checkArgument(tokens.isEmpty(), "Unexpected trailing tokens: %s", tokens);
   }
@@ -501,7 +499,7 @@ public class JackParser {
     tokens.expect(KEYWORD_CONSTANT_TOKENS.toString());
     JackToken token = extractToken(TokenType.KEYWORD);
     Preconditions.checkArgument(KEYWORD_CONSTANT_TOKENS.contains(token.tokenText()));
-    visitor.visitTerminal(token);
+    tokensVisitor.visitor().visitTerminal(token);
   }
 
   private void parseStringConstant() {
@@ -518,7 +516,7 @@ public class JackParser {
 
   private void parseToken(String tokenDescription, TokenType tokenType) {
     tokens.expect(tokenDescription);
-    visitor.visitTerminal(extractToken(tokenType));
+    tokensVisitor.visitor().visitTerminal(extractToken(tokenType));
   }
 
   // Look ahead functions
@@ -569,7 +567,7 @@ public class JackParser {
     Preconditions.checkArgument(
         tokenTexts.contains(token.tokenText()),
         "Expected %s but found %s.", tokenTexts, token.toString());
-    visitor.visitTerminal(token);
+    tokensVisitor.visitor().visitTerminal(token);
   }
 
   private JackToken getPeekedToken(String expectedTokenDescription) {

@@ -11,6 +11,6 @@ public class TokensWriter {
     ParsedXmlWriter xmlWriter = new ParsedXmlWriter(writer, ImmutableSet.of("tokens"));
     xmlWriter.beginNonTerminalVisit("tokens");
     tokens.stream().forEachOrdered(xmlWriter::visitTerminal);
-    xmlWriter.endNonTerminalVisit();
+    xmlWriter.endNonTerminalVisit("tokens");
   }
 }

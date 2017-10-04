@@ -3,22 +3,23 @@ package com.computer.nand2tetris.compiler.parser;
 import com.computer.nand2tetris.compiler.JackElementVisitor;
 import com.computer.nand2tetris.compiler.JackToken;
 import com.computer.nand2tetris.compiler.LookAheadStream;
+import com.google.auto.value.AutoValue;
 
-public class TokensVisitor {
+@AutoValue
+abstract class TokensVisitor {
 
-  private final LookAheadStream<JackToken> tokens;
-  private final JackElementVisitor visitor;
-
-  public TokensVisitor(LookAheadStream<JackToken> tokens, JackElementVisitor visitor) {
-    this.tokens = tokens;
-    this.visitor = visitor;
+  static TokensVisitor create(LookAheadStream<JackToken> tokens, JackElementVisitor visitor) {
+    return new AutoValue_TokensVisitor(tokens, visitor);
   }
 
-  public NonTerminalVisitingParser nonTerminalParserOf(String tokenText, String tokenDescription) {
-    return NonTerminalVisitingParser.of(tokenText, tokenDescription, tokens, visitor);
+  abstract LookAheadStream<JackToken> tokens();
+  abstract JackElementVisitor visitor();
+
+  NonTerminalVisitingParser nonTerminalParserOf(String tokenText, String tokenDescription) {
+    return NonTerminalVisitingParser.of(tokenText, tokenDescription, tokens(), visitor());
   }
 
-  public NonTerminalVisitingParser nonTerminalParserOf(String tokenText) {
+  NonTerminalVisitingParser nonTerminalParserOf(String tokenText) {
     return nonTerminalParserOf(tokenText, tokenText);
   }
 }

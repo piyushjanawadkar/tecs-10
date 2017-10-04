@@ -1,13 +1,13 @@
 package com.computer.nand2tetris.compiler.io;
 
+import com.computer.nand2tetris.compiler.JackElementVisitor;
 import com.computer.nand2tetris.compiler.JackToken;
-import com.computer.nand2tetris.compiler.StackBasedJackElementVisitor;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import java.io.BufferedWriter;
 import java.io.IOException;
 
-public class ParsedXmlWriter extends StackBasedJackElementVisitor {
+public class ParsedXmlWriter implements JackElementVisitor {
 
   private static final String INDENTATION_UNIT = "  ";  // 2 spaces
   private static final ImmutableMap<String, String> BROWSABLE_STRINGS =
@@ -41,7 +41,7 @@ public class ParsedXmlWriter extends StackBasedJackElementVisitor {
   }
 
   @Override
-  protected void beginVisitForNonTerminal(String nonTerminalText) {
+  public void beginNonTerminalVisit(String nonTerminalText) {
     if (nonTerminalsToParse.contains(nonTerminalText)) {
       indentAndWrite(createTag(nonTerminalText));
       increaseIndentation();
@@ -50,7 +50,7 @@ public class ParsedXmlWriter extends StackBasedJackElementVisitor {
   }
 
   @Override
-  protected void endVisitForNonTerminal(String nonTerminalText) {
+  public void endNonTerminalVisit(String nonTerminalText) {
     if (nonTerminalsToParse.contains(nonTerminalText)) {
       decreaseIndentation();
       indentAndWrite(createClosingTag(nonTerminalText));

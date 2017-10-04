@@ -5,7 +5,7 @@ import com.google.common.base.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 
-public class Context extends StackBasedJackElementVisitor {
+public class Context implements JackElementVisitor {
 
   private Set<String> classNames = new TreeSet<>();
 
@@ -13,12 +13,12 @@ public class Context extends StackBasedJackElementVisitor {
   Optional<String> currentClassName = Optional.absent();
 
   @Override
-  protected void beginVisitForNonTerminal(String nonTerminalText) {
+  public void beginNonTerminalVisit(String nonTerminalText) {
     inClassNonTerminal = nonTerminalText.equals("class");
   }
 
   @Override
-  protected void endVisitForNonTerminal(String nonTerminalText) {
+  public void endNonTerminalVisit(String nonTerminalText) {
     if (inClassNonTerminal && nonTerminalText.equals("class")) {
       inClassNonTerminal = false;
     }
