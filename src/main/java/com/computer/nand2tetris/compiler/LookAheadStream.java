@@ -1,6 +1,7 @@
 package com.computer.nand2tetris.compiler;
 
 import com.google.common.base.Optional;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import java.util.LinkedList;
 import java.util.List;
@@ -52,5 +53,10 @@ public final class LookAheadStream<T> {
 
   private void concat(T lookAhead, List<T> restItems) {
     restItems.add(0, lookAhead);
+  }
+
+  public void expect(String tokenDescription) {
+    Preconditions.checkArgument(
+        !isEmpty(), "No further tokens. Expected %s", tokenDescription);
   }
 }
