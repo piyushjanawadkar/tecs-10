@@ -14,13 +14,16 @@ public class Context implements JackElementVisitor {
 
   @Override
   public void beginNonTerminalVisit(String nonTerminalText) {
-    inClassNonTerminal = nonTerminalText.equals("class");
+    if (nonTerminalText.equals("class")) {
+      inClassNonTerminal = true;
+    }
   }
 
   @Override
   public void endNonTerminalVisit(String nonTerminalText) {
     if (inClassNonTerminal && nonTerminalText.equals("class")) {
       inClassNonTerminal = false;
+      currentClassName = Optional.absent();
     }
   }
 
@@ -34,5 +37,12 @@ public class Context implements JackElementVisitor {
 
   public boolean isClassNameToken(JackToken token) {
     return classNames.contains(token.tokenText());
+  }
+
+  public String toString() {
+    return String.format(
+        "current class name: %s, all class names: %s",
+        currentClassName,
+        classNames);
   }
 }

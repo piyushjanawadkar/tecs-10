@@ -1,6 +1,7 @@
 package com.computer.nand2tetris.compiler.tokenizer;
 
 import com.google.common.base.Optional;
+import com.google.common.base.Preconditions;
 
 class JackPreprocessor {
 
@@ -12,6 +13,7 @@ class JackPreprocessor {
   String preprocess(String line) {
     StringBuilder builder = new StringBuilder();
     stripComment(line, 0, builder);
+    Preconditions.checkArgument(!inComment, "unterminated comment.");
     return builder.toString();
   }
 
