@@ -13,7 +13,6 @@ class JackPreprocessor {
   String preprocess(String line) {
     StringBuilder builder = new StringBuilder();
     stripComment(line, 0, builder);
-    Preconditions.checkArgument(!inComment, "unterminated comment.");
     return builder.toString();
   }
 
@@ -86,5 +85,9 @@ class JackPreprocessor {
     }
 
     return multiLineCommentIndex;
+  }
+
+  public boolean hasUnterminatedComment() {
+    return inComment;
   }
 }

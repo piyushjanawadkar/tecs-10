@@ -27,10 +27,16 @@ public class JackTokenizer {
 
   public ImmutableList<JackToken> tokenize(BufferedReader reader) {
     JackPreprocessor preprocessor = new JackPreprocessor();
-    return reader.lines()
-        .map(preprocessor::preprocess)
-        .flatMap(l -> tokenizeLine(l))
-        .collect(toImmutableList());
+    ImmutableList<JackToken> tokens =
+        reader
+            .lines()
+            .map(preprocessor::preprocess)
+            .flatMap(l -> tokenizeLine(l))
+            .collect(toImmutableList());
+    Preconditions.checkArgument(
+        !preprocessor.hasUnterminatedComment(),
+        "Unterminated comment in source file containing %s", tokens);
+    return tokens;
   }
 
   private static Stream<JackToken> tokenizeLine(String line) {
