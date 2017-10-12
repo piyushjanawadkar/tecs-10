@@ -33,9 +33,7 @@ public class JackTokenizer {
             .map(preprocessor::preprocess)
             .flatMap(l -> tokenizeLine(l))
             .collect(toImmutableList());
-    Preconditions.checkArgument(
-        !preprocessor.hasUnterminatedComment(),
-        "Unterminated comment in source file containing %s", tokens);
+    preprocessor.done();
     return tokens;
   }
 

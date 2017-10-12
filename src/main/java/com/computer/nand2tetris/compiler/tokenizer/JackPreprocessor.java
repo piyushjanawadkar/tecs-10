@@ -87,7 +87,9 @@ class JackPreprocessor {
     return multiLineCommentIndex;
   }
 
-  public boolean hasUnterminatedComment() {
-    return inComment;
+  public void done() {
+    Preconditions.checkArgument(
+        !inComment,
+        "Unterminated comment in source file.");
   }
 }
