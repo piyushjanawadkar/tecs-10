@@ -1,0 +1,137 @@
+The major modules of the Jack compiler are elaborated below:
+
+1. JackAnalyzer
+
+This module lays out the "pipeline". It calls IOPathsCreator to create I/O
+locations. It then calls JackTokenizer for each input file and passes the
+tokens output by it to JackParser for parsing.
+
+The parser needs to know the list of class names in all the input files to
+distinguish between identifiers and class names. For ex, if A.jack has the
+call B.method(), then the parser needs to know whether B is an identifier
+or a class name (B.jack hasn't yet been compiled). Therefore, the analyzer
+uses a two pass algorithm for parsing. In the first pass, it builds the
+"context" i.e collects class names. This context is passed to the second pass
+that does the actual code (XML) generation.
+
+In addition to invoking tokenizer and parser, it also dumps the list of tokens
+to an XML file (tokens for Foo.jack are dumped to FooT.xml. Note the "T" in the
+file name)
+
+2. JackTokenizer
+
+This module takes a file reader and produces a list of tokens (JackToken
+instances).
+
+Tokens don't span multiple lines. So it generates a token list from each line
+and appends the generated lists together.
+
+To process each line, it invokes a stateful preprocessor on each line. The
+preprocessor is stateful because it needs information whether the line being
+processed falls inside an unterminated multiline comment.
+
+The tokenizer maintains a list of "token extractors" (concrete implementations
+of JackTokenExtractor) to extract different types of tokens like integer,
+string etc
+
+The tokenizer generates a LookaheadStream from the characters of the
+preprocessed line. It selects a unique token extractor matching the lookahead
+character and uses it to extract a token from the lookahead stream until the
+latter gets exhausted. The extraction causes look ahead stream to get advanced.
+
+3. JackParser
+
+This module implements the top down parsing of Jack grammar. It has (roughly)
+one method for parsing a terminal or a non terminal. For example, to parse a
+the statement "do method();" according to the grammar production
+<stmt> := do <subroutineName>(<argumentList>); the parseDoStatement() method
+has
+
+    match("do");
+    parseSubroutineName();
+    match("(");
+    parseSubroutineArgumentList();
+    match(")");
+    match(";");
+
+Each terminal, non terminal encountered is passed to a JackElementVisitor
+instance that was passed to the parser by the caller. The ParsedXmlWriter
+implementation of the visitor writes the terminal or non terminal to the
+output file writer that it is bound to.
+
+Note that "Context" also implements JackElementVisitor so that it can flow
+through the parser methods and collect names of classes depending on whether
+the previous token was the keyword "class"
+
+In subsequent exercise, the hope is that a new concrete visitor that outputs
+VM statements for grammar element can be implemented.
+
+4. LookAheadStream
+
+This is a key abstraction that is used by both tokenizer and parser. Both
+modules need the ability to peek into a stream of objects, analyse the first
+object, determine the process to invoke, and then extract tokens from the
+stream.
+
+The peek() operation does not modify the stream. It only gives read access to
+the first element. The extract() operation, on the other hand, removes the
+first element from the stream and resets the look ahead to the new first
+element.
+
+There are a couple of cases where JackParser has to look beyond the first
+element to decide the parsing steps. For example while parsing subroutine
+calls, "do bar();" and "do Foo.bar()", an identifier follows the "do" keyword
+in both cases and can't tell the two forms apart. Therefore, the parser
+extracts the token and checks whether the new look ahead is a "(" or "." to
+disambiguate the two forms. However, the extracted token needs to be put back
+into the stream at the first position. So, the stream supports a putBack()
+API. Another example that uses put back is to disambiguate "var foo = 1;"
+and "var foo[0] = 1;". The presence of "[" after extracting the first token
+determines whether the lvalue is a variable or an array.
+
+5. JackElementVisitor
+
+As mentioned earlier, instances of this visitor are called on each node of
+the incrementally generated parse tree. For non terminals it exposes methods
+beginNonTerminalVisit() and endNonTerminalVisit().
+
+The ParsedXmlWriter encapsulates all of the XML generation. In particular, it
+uses the begin/end hooks to output opening and closing XML tags for each
+whitelisted non terminal. It also manages indentation, mapping ">" to "&gt;"
+etc. In addition, not all non terminals need to be tagged in the output XML.
+For ex, a list of two statements needs to be printed as
+
+    <statement>
+      ...
+    </statement>
+    <statement>
+      ...
+    </statement>
+
+instead of
+
+    <statements>
+        <statement>
+          ...
+        </statement>
+        <statement>
+          ...
+        </statement>
+    </statements>
+
+So, the visitor is passed the (white) list of non terminals that should be
+output.
+
+6. NonTerminalVisitingParser
+
+This is purely syntactic sugar. Every non terminal parsing routine needs to
+call visitor.beginNonTerminalVisit() at the beginning and
+visitor.endNonTerminalVisit() when it returns. This is error prone and
+needlessly repetitive.
+
+The NonTerminalVisitingParser automates this by calling
+visitor.beginNonTerminalVisit() in its constructor. It has a method parse()
+that is passed the lambda function (Runnable) containing the steps to execute.
+It executes the runnable and calls visitor.endNonTerminalVisit() after the
+runnable has finished running. That way the caller is less repetitive and more
+declarative.
